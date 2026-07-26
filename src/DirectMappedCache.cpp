@@ -44,13 +44,14 @@ DirectMappedCache::DirectMappedCache(
 }
 
 bool DirectMappedCache::access(std::uint64_t address) {
-    const std::uint64_t blockAddress = address / blockSize_;
+    const std::uint64_t blockAddress =
+    calculateBlockAddress(address);
+
     const std::size_t index =
-        static_cast<std::size_t>(
-            blockAddress % numberOfLines_
-        );
+        calculateIndex(blockAddress);
+
     const std::uint64_t tag =
-        blockAddress / numberOfLines_;
+        calculateTag(blockAddress);
 
     CacheLine& line = lines_[index];
 
@@ -84,4 +85,24 @@ void DirectMappedCache::printStatistics() const {
         std::cout << std::fixed << std::setprecision(2);
         std::cout << "Hit rate: " << hitRate << "%\n";
     }
+}
+
+std::uint64_t DirectMappedCache::calculateBlockAddress(
+    std::uint64_t address
+) const {
+    return address / blockSize_;
+}
+
+std::size_t DirectMappedCache::calculateIndex(
+    std::uint64_t blockAddress
+) const {
+    return static_cast<std::size_t>(
+        blockAddress % numberOfLines_
+    );
+}
+
+std::uint64_t DirectMappedCache::calculateTag(
+    std::uint64_t blockAddress
+) const {
+    return blockAddress / numberOfLines_;
 }

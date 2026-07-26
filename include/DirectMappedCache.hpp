@@ -24,6 +24,12 @@ private:
 
     std::size_t hits_ = 0;
     std::size_t misses_ = 0;
+
+    std::uint64_t calculateBlockAddress(std::uint64_t address) const;
+
+    std::size_t calculateIndex(std::uint64_t blockAddress) const;
+
+    std::uint64_t calculateTag(std::uint64_t blockAddress) const;
 };
 
 #endif
