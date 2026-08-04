@@ -1,7 +1,5 @@
 #include "DirectMappedCache.hpp"
 
-#include <iomanip>
-#include <iostream>
 #include <stdexcept>
 
 namespace {
@@ -56,35 +54,19 @@ bool DirectMappedCache::access(std::uint64_t address) {
     CacheLine& line = lines_[index];
 
     if (line.valid && line.tag == tag) {
-        ++hits_;
+        statistics_.recordHit();
         return true;
     }
 
     line.valid = true;
     line.tag = tag;
-    ++misses_;
+    statistics_.recordMiss();
 
     return false;
 }
 
 void DirectMappedCache::printStatistics() const {
-    const std::size_t total = hits_ + misses_;
-
-    std::cout << "\nStatistics\n";
-    std::cout << "----------\n";
-    std::cout << "Total accesses: " << total << '\n';
-    std::cout << "Hits: " << hits_ << '\n';
-    std::cout << "Misses: " << misses_ << '\n';
-
-    if (total > 0) {
-        const double hitRate =
-            static_cast<double>(hits_) /
-            static_cast<double>(total) *
-            100.0;
-
-        std::cout << std::fixed << std::setprecision(2);
-        std::cout << "Hit rate: " << hitRate << "%\n";
-    }
+    statistics_.printReport();
 }
 
 std::uint64_t DirectMappedCache::calculateBlockAddress(

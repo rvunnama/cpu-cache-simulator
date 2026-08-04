@@ -2,6 +2,7 @@
 #define DIRECT_MAPPED_CACHE_HPP
 
 #include "CacheLine.hpp"
+#include "CacheStatistics.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -22,8 +23,7 @@ private:
 
     std::vector<CacheLine> lines_;
 
-    std::size_t hits_ = 0;
-    std::size_t misses_ = 0;
+    CacheStatistics statistics_;
 
     std::uint64_t calculateBlockAddress(std::uint64_t address) const;
 
