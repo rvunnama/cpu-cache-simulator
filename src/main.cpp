@@ -15,6 +15,7 @@ struct ProgramOptions {
     std::size_t cacheSize = 64;
     std::size_t blockSize = 16;
     std::string tracePath = "traces/basic.trace";
+    bool verbose = false;
 };
 
 void printUsage(const std::string& programName) {
@@ -23,12 +24,20 @@ void printUsage(const std::string& programName) {
         << "  " << programName
         << " --cache-size <bytes>"
         << " --block-size <bytes>"
-        << " --trace <file>\n\n"
+        << " --trace <file>"
+        << " [--verbose]\n\n"
+        << "Options:\n"
+        << "  --cache-size <bytes>  Total cache capacity\n"
+        << "  --block-size <bytes>  Number of bytes per block\n"
+        << "  --trace <file>        Memory trace file\n"
+        << "  --verbose             Print every cache access\n"
+        << "  --help                Show this help message\n\n"
         << "Example:\n"
         << "  " << programName
         << " --cache-size 64"
         << " --block-size 16"
-        << " --trace traces/basic.trace\n";
+        << " --trace traces/basic.trace"
+        << " --verbose\n";
 }
 
 std::size_t parseSize(
@@ -69,22 +78,41 @@ ProgramOptions parseArguments(int argc, char* argv[]) {
             std::exit(0);
         }
 
-        if (index + 1 >= argc) {
-            throw std::invalid_argument(
-                "Missing value after option: " + argument
-            );
+        if (argument == "--verbose") {
+            options.verbose = true;
+            continue;
         }
 
-        const std::string value = argv[++index];
-
         if (argument == "--cache-size") {
-            options.cacheSize =
-                parseSize(value, "--cache-size");
+            if (index + 1 >= argc) {
+                throw std::invalid_argument(
+                    "Missing value after --cache-size."
+                );
+            }
+
+            options.cacheSize = parseSize(
+                argv[++index],
+                "--cache-size"
+            );
         } else if (argument == "--block-size") {
-            options.blockSize =
-                parseSize(value, "--block-size");
+            if (index + 1 >= argc) {
+                throw std::invalid_argument(
+                    "Missing value after --block-size."
+                );
+            }
+
+            options.blockSize = parseSize(
+                argv[++index],
+                "--block-size"
+            );
         } else if (argument == "--trace") {
-            options.tracePath = value;
+            if (index + 1 >= argc) {
+                throw std::invalid_argument(
+                    "Missing value after --trace."
+                );
+            }
+
+            options.tracePath = argv[++index];
         } else {
             throw std::invalid_argument(
                 "Unknown option: " + argument
@@ -119,17 +147,22 @@ int main(int argc, char* argv[]) {
         std::cout << "Trace file: "
                   << options.tracePath
                   << "\n\n";
+        std::cout << "Verbose mode: "
+                  << (options.verbose ? "enabled" : "disabled")
+                  << "\n\n";
 
         for (const std::uint64_t address : addresses) {
             const bool hit = cache.access(address);
 
-            std::cout << "Address 0x"
-                      << std::hex
-                      << address
-                      << std::dec
-                      << ": "
-                      << (hit ? "HIT" : "MISS")
-                      << '\n';
+            if (options.verbose) {
+                std::cout << "Address 0x"
+                        << std::hex
+                        << address
+                        << std::dec
+                        << ": "
+                        << (hit ? "HIT" : "MISS")
+                        << '\n';
+            }
         }
 
         cache.printStatistics();
