@@ -1,5 +1,6 @@
 #include "DirectMappedCache.hpp"
 #include "TraceParser.hpp"
+#include "CacheVisualizer.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -16,6 +17,7 @@ struct ProgramOptions {
     std::size_t blockSize = 16;
     std::string tracePath = "traces/basic.trace";
     bool verbose = false;
+    bool visualize = false;
 };
 
 void printUsage(const std::string& programName) {
@@ -31,6 +33,7 @@ void printUsage(const std::string& programName) {
         << "  --block-size <bytes>  Number of bytes per block\n"
         << "  --trace <file>        Memory trace file\n"
         << "  --verbose             Print every cache access\n"
+        << "  --visualize           Print the final cache state\n"
         << "  --help                Show this help message\n\n"
         << "Example:\n"
         << "  " << programName
@@ -80,6 +83,11 @@ ProgramOptions parseArguments(int argc, char* argv[]) {
 
         if (argument == "--verbose") {
             options.verbose = true;
+            continue;
+        }
+
+        if (argument == "--visualize") {
+            options.visualize = true;
             continue;
         }
 
@@ -163,6 +171,10 @@ int main(int argc, char* argv[]) {
                         << (hit ? "HIT" : "MISS")
                         << '\n';
             }
+        }
+
+        if (options.visualize) {
+            CacheVisualizer::print(cache);
         }
 
         cache.printStatistics();

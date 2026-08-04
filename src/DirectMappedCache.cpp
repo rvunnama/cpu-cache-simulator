@@ -88,3 +88,8 @@ std::uint64_t DirectMappedCache::calculateTag(
 ) const {
     return blockAddress / numberOfLines_;
 }
+
+const std::vector<CacheLine>&
+DirectMappedCache::getCacheLines() const {
+    return lines_;
+}

@@ -19,6 +19,8 @@ public:
 
     void printStatistics() const;
 
+    const std::vector<CacheLine>& getCacheLines() const;
+
 private:
     std::size_t cacheSize_;
     std::size_t blockSize_;
