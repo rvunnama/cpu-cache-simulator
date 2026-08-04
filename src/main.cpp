@@ -18,6 +18,7 @@ struct ProgramOptions {
     std::string tracePath = "traces/basic.trace";
     bool verbose = false;
     bool visualize = false;
+    bool step = false;
 };
 
 void printUsage(const std::string& programName) {
@@ -34,6 +35,7 @@ void printUsage(const std::string& programName) {
         << "  --trace <file>        Memory trace file\n"
         << "  --verbose             Print every cache access\n"
         << "  --visualize           Print the final cache state\n"
+        << "  --step                Pause and display the cache after each access\n"
         << "  --help                Show this help message\n\n"
         << "Example:\n"
         << "  " << programName
@@ -91,6 +93,12 @@ ProgramOptions parseArguments(int argc, char* argv[]) {
             continue;
         }
 
+        if (argument == "--step") {
+            options.step = true;
+            options.verbose = true;
+            continue;
+        }
+
         if (argument == "--cache-size") {
             if (index + 1 >= argc) {
                 throw std::invalid_argument(
@@ -130,6 +138,12 @@ ProgramOptions parseArguments(int argc, char* argv[]) {
 
     return options;
 }
+
+void waitForEnter() {
+    std::cout << "\nPress Enter to continue...";
+    std::cin.get();
+}
+
 }
 
 int main(int argc, char* argv[]) {
@@ -163,7 +177,7 @@ int main(int argc, char* argv[]) {
             const bool hit = cache.access(address);
 
             if (options.verbose) {
-                std::cout << "Address 0x"
+                std::cout << "\nAddress 0x"
                         << std::hex
                         << address
                         << std::dec
@@ -171,13 +185,19 @@ int main(int argc, char* argv[]) {
                         << (hit ? "HIT" : "MISS")
                         << '\n';
             }
+
+            if (options.step) {
+                CacheVisualizer::print(cache);
+                waitForEnter();
+            }
         }
 
-        if (options.visualize) {
+        if (options.visualize && !options.step) {
             CacheVisualizer::print(cache);
         }
 
         cache.printStatistics();
+        
     } catch (const std::exception& error) {
         std::cerr << "Error: "
                   << error.what()
