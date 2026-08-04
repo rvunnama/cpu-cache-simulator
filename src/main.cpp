@@ -1,9 +1,11 @@
 #include "DirectMappedCache.hpp"
+#include "TraceParser.hpp"
 
 #include <cstddef>
 #include <cstdint>
 #include <exception>
 #include <iostream>
+#include <string>
 #include <vector>
 
 int main() {
@@ -11,16 +13,12 @@ int main() {
         constexpr std::size_t cacheSize = 64;
         constexpr std::size_t blockSize = 16;
 
+        const std::string tracePath = "traces/basic.trace";
+
         DirectMappedCache cache(cacheSize, blockSize);
 
-        const std::vector<std::uint64_t> addresses = {
-            0,
-            4,
-            16,
-            0,
-            64,
-            0
-        };
+        const std::vector<std::uint64_t> addresses =
+            TraceParser::parseFile(tracePath);
 
         std::cout << "Rhea CPU Cache Simulator\n";
         std::cout << "Cache size: "
@@ -28,13 +26,18 @@ int main() {
                   << " bytes\n";
         std::cout << "Block size: "
                   << blockSize
-                  << " bytes\n\n";
+                  << " bytes\n";
+        std::cout << "Trace file: "
+                  << tracePath
+                  << "\n\n";
 
         for (const std::uint64_t address : addresses) {
             const bool hit = cache.access(address);
 
-            std::cout << "Address "
+            std::cout << "Address 0x"
+                      << std::hex
                       << address
+                      << std::dec
                       << ": "
                       << (hit ? "HIT" : "MISS")
                       << '\n';
