@@ -1,4 +1,4 @@
-#include "DirectMappedCache.hpp"
+#include "SetAssociativeCache.hpp"
 #include "TraceParser.hpp"
 #include "CacheVisualizer.hpp"
 
@@ -151,9 +151,12 @@ int main(int argc, char* argv[]) {
         const ProgramOptions options =
             parseArguments(argc, argv);
 
-        DirectMappedCache cache(
+        constexpr std::size_t associativity = 2;
+
+        SetAssociativeCache cache(
             options.cacheSize,
-            options.blockSize
+            options.blockSize,
+            associativity
         );
 
         const std::vector<std::uint64_t> addresses =
@@ -172,6 +175,9 @@ int main(int argc, char* argv[]) {
         std::cout << "Verbose mode: "
                   << (options.verbose ? "enabled" : "disabled")
                   << "\n\n";
+        std::cout << "Associativity: "
+                  << associativity
+                  << "-way\n";
 
         for (const std::uint64_t address : addresses) {
             const bool hit = cache.access(address);
@@ -192,12 +198,12 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        if (options.visualize && !options.step) {
-            CacheVisualizer::print(cache);
-        }
+       // if (options.visualize && !options.step) {
+         //   CacheVisualizer::print(cache);
+       // }
 
         cache.printStatistics();
-        
+
     } catch (const std::exception& error) {
         std::cerr << "Error: "
                   << error.what()
