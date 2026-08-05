@@ -95,16 +95,11 @@ bool SetAssociativeCache::access(std::uint64_t address) {
 
     statistics_.recordMiss();
 
-    for (CacheLine& line : lines) {
-        if (!line.valid) {
-            line.valid = true;
-            line.tag = tag;
-            return false;
-        }
-    }
+    CacheLine& insertionLine =
+        set.selectLineForInsertion();
 
-    lines[0].valid = true;
-    lines[0].tag = tag;
+    insertionLine.valid = true;
+    insertionLine.tag = tag;
 
     return false;
 }

@@ -11,11 +11,13 @@ public:
     explicit CacheSet(std::size_t associativity);
 
     std::vector<CacheLine>& getLines();
-
     const std::vector<CacheLine>& getLines() const;
+
+    CacheLine& selectLineForInsertion();
 
 private:
     std::vector<CacheLine> lines_;
+    std::size_t nextReplacementIndex_ = 0;
 };
 
 #endif
