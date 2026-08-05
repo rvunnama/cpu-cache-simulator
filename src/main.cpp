@@ -21,6 +21,7 @@ struct ProgramOptions {
     std::size_t blockSize = 16;
     std::size_t associativity = 1;
     std::string tracePath = "traces/basic.trace";
+    std::string csvPath;
 
     ReplacementPolicy replacementPolicy =
         ReplacementPolicy::FIFO;
@@ -52,6 +53,7 @@ void printUsage(const std::string& programName) {
         << "  --visualize            Print the final cache state\n"
         << "  --step                 Pause after each access\n"
         << "  --benchmark           Compare cache configurations\n"
+        << "  --csv <file>          Export benchmark results to CSV\n"
         << "  --help                 Show this help message\n\n"
         << "Example:\n"
         << "  " << programName
@@ -208,6 +210,15 @@ ProgramOptions parseArguments(int argc, char* argv[]) {
 
             options.tracePath = argv[++index];
 
+        } else if (argument == "--csv") {
+            if (index + 1 >= argc) {
+                throw std::invalid_argument(
+                    "Missing value after --csv."
+                );
+            }
+
+            options.csvPath = argv[++index];
+
         } else {
             throw std::invalid_argument(
                 "Unknown option: " + argument
@@ -249,6 +260,18 @@ int main(int argc, char* argv[]) {
                 );
 
             BenchmarkRunner::printResults(results);
+
+            if (!options.csvPath.empty()) {
+                BenchmarkRunner::exportCsv(
+                    results,
+                    options.csvPath
+                );
+
+                std::cout << "\nCSV exported to: "
+                        << options.csvPath
+                        << '\n';
+            }
+            
             return 0;
         }
 

@@ -1,0 +1,7 @@
+CacheSize,BlockSize,Associativity,ReplacementPolicy,Hits,Misses,HitRate
+64,16,1,FIFO,0,6,0.00
+64,16,1,LRU,0,6,0.00
+64,16,2,FIFO,1,5,16.67
+64,16,2,LRU,2,4,33.33
+64,16,4,FIFO,3,3,50.00
+64,16,4,LRU,3,3,50.00

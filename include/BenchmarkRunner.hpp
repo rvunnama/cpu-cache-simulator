@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <vector>
+#include <string>
 
 struct BenchmarkResult {
     std::size_t cacheSize;
@@ -27,6 +28,11 @@ public:
 
     static void printResults(
         const std::vector<BenchmarkResult>& results
+    );
+
+    static void exportCsv(
+        const std::vector<BenchmarkResult>& results,
+        const std::string& filePath
     );
 
 private:

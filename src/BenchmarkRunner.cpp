@@ -6,6 +6,8 @@
 #include <iomanip>
 #include <iostream>
 #include <vector>
+#include <fstream>
+#include <stdexcept>
 
 std::vector<BenchmarkResult> BenchmarkRunner::run(
     const std::vector<std::uint64_t>& addresses,
@@ -132,4 +134,40 @@ const char* BenchmarkRunner::policyToString(
     }
 
     return "Unknown";
+}
+
+void BenchmarkRunner::exportCsv(
+    const std::vector<BenchmarkResult>& results,
+    const std::string& filePath
+) {
+    std::ofstream outputFile(filePath);
+
+    if (!outputFile.is_open()) {
+        throw std::runtime_error(
+            "Unable to create CSV file: " + filePath
+        );
+    }
+
+    outputFile
+        << "CacheSize,"
+        << "BlockSize,"
+        << "Associativity,"
+        << "ReplacementPolicy,"
+        << "Hits,"
+        << "Misses,"
+        << "HitRate\n";
+
+    for (const BenchmarkResult& result : results) {
+        outputFile
+            << result.cacheSize << ','
+            << result.blockSize << ','
+            << result.associativity << ','
+            << policyToString(result.policy) << ','
+            << result.hits << ','
+            << result.misses << ','
+            << std::fixed
+            << std::setprecision(2)
+            << result.hitRate
+            << '\n';
+    }
 }
