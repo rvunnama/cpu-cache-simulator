@@ -271,7 +271,7 @@ int main(int argc, char* argv[]) {
                         << options.csvPath
                         << '\n';
             }
-            
+
             return 0;
         }
 
@@ -311,15 +311,15 @@ int main(int argc, char* argv[]) {
                         << '\n';
             }
 
-            //if (options.step) {
-                //CacheVisualizer::print(cache);
-                //waitForEnter();
-            //}
+            if (options.step) {
+                CacheVisualizer::print(cache);
+                waitForEnter();
+            }
         }
 
-       // if (options.visualize && !options.step) {
-         //   CacheVisualizer::print(cache);
-            // }
+        if (options.visualize && !options.step) {
+            CacheVisualizer::print(cache);
+        }
 
         cache.printStatistics();
 
