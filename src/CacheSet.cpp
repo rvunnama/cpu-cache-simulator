@@ -20,17 +20,39 @@ const std::vector<CacheLine>& CacheSet::getLines() const {
     return lines_;
 }
 
-CacheLine& CacheSet::selectLineForInsertion() {
+CacheLine& CacheSet::selectLineForInsertion(
+    ReplacementPolicy replacementPolicy
+) {
     for (CacheLine& line : lines_) {
         if (!line.valid) {
             return line;
         }
     }
 
-    CacheLine& victim = lines_.at(nextReplacementIndex_);
+    std::size_t victimIndex = 0;
 
-    nextReplacementIndex_ =
-        (nextReplacementIndex_ + 1) % lines_.size();
+    for (std::size_t index = 1;
+         index < lines_.size();
+         ++index) {
 
-    return victim;
+        if (replacementPolicy == ReplacementPolicy::FIFO) {
+            if (
+                lines_[index].insertionOrder <
+                lines_[victimIndex].insertionOrder
+            ) {
+                victimIndex = index;
+            }
+        } else if (
+            replacementPolicy == ReplacementPolicy::LRU
+        ) {
+            if (
+                lines_[index].lastAccessOrder <
+                lines_[victimIndex].lastAccessOrder
+            ) {
+                victimIndex = index;
+            }
+        }
+    }
+
+    return lines_.at(victimIndex);
 }

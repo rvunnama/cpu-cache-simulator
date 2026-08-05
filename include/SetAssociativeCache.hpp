@@ -36,6 +36,8 @@ private:
     std::vector<CacheSet> sets_;
     CacheStatistics statistics_;
 
+    std::size_t accessCounter_ = 0;
+
     std::uint64_t calculateBlockAddress(
         std::uint64_t address
     ) const;

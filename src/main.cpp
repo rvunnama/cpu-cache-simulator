@@ -42,7 +42,7 @@ void printUsage(const std::string& programName) {
         << "  --cache-size <bytes>   Total cache capacity\n"
         << "  --block-size <bytes>   Number of bytes per block\n"
         << "  --associativity <ways> Number of lines per set\n"
-        << "  --replacement <policy> Replacement policy: fifo\n"
+        << "  --replacement <policy> Replacement policy: fifo or lru\n"
         << "  --trace <file>         Memory trace file\n"
         << "  --verbose              Print every cache access\n"
         << "  --visualize            Print the final cache state\n"
@@ -92,9 +92,13 @@ ReplacementPolicy parseReplacementPolicy(
         return ReplacementPolicy::FIFO;
     }
 
+    if (text == "lru") {
+        return ReplacementPolicy::LRU;
+    }
+
     throw std::invalid_argument(
         "Unsupported replacement policy: " + text +
-        ". Currently supported: fifo."
+        ". Supported policies: fifo, lru."
     );
 }
 

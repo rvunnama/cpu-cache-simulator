@@ -2,6 +2,7 @@
 #define CACHE_SET_HPP
 
 #include "CacheLine.hpp"
+#include "ReplacementPolicy.hpp"
 
 #include <cstddef>
 #include <vector>
@@ -13,11 +14,12 @@ public:
     std::vector<CacheLine>& getLines();
     const std::vector<CacheLine>& getLines() const;
 
-    CacheLine& selectLineForInsertion();
+    CacheLine& selectLineForInsertion(
+        ReplacementPolicy replacementPolicy
+    );
 
 private:
     std::vector<CacheLine> lines_;
-    std::size_t nextReplacementIndex_ = 0;
 };
 
 #endif

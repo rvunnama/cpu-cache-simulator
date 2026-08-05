@@ -1,8 +1,10 @@
 #include "SetAssociativeCache.hpp"
 
 #include <stdexcept>
+#include <vector>
 
 namespace {
+
 std::size_t validateAndCalculateLineCount(
     std::size_t cacheSize,
     std::size_t blockSize,
@@ -44,7 +46,8 @@ std::size_t validateAndCalculateLineCount(
 
     return numberOfLines;
 }
-}
+
+}  // namespace
 
 SetAssociativeCache::SetAssociativeCache(
     std::size_t cacheSize,
@@ -68,14 +71,20 @@ SetAssociativeCache::SetAssociativeCache(
 
     sets_.reserve(numberOfSets_);
 
-    for (std::size_t index = 0;
-         index < numberOfSets_;
-         ++index) {
+    for (
+        std::size_t index = 0;
+        index < numberOfSets_;
+        ++index
+    ) {
         sets_.emplace_back(associativity_);
     }
 }
 
-bool SetAssociativeCache::access(std::uint64_t address) {
+bool SetAssociativeCache::access(
+    std::uint64_t address
+) {
+    ++accessCounter_;
+
     const std::uint64_t blockAddress =
         calculateBlockAddress(address);
 
@@ -85,11 +94,13 @@ bool SetAssociativeCache::access(std::uint64_t address) {
     const std::uint64_t tag =
         calculateTag(blockAddress);
 
-    CacheSet& set = sets_[setIndex];
+    CacheSet& set = sets_.at(setIndex);
     std::vector<CacheLine>& lines = set.getLines();
 
     for (CacheLine& line : lines) {
         if (line.valid && line.tag == tag) {
+            line.lastAccessOrder = accessCounter_;
+
             statistics_.recordHit();
             return true;
         }
@@ -98,10 +109,14 @@ bool SetAssociativeCache::access(std::uint64_t address) {
     statistics_.recordMiss();
 
     CacheLine& insertionLine =
-        set.selectLineForInsertion();
+        set.selectLineForInsertion(
+            replacementPolicy_
+        );
 
     insertionLine.valid = true;
     insertionLine.tag = tag;
+    insertionLine.insertionOrder = accessCounter_;
+    insertionLine.lastAccessOrder = accessCounter_;
 
     return false;
 }
