@@ -24,6 +24,8 @@ public:
 
     const std::vector<CacheSet>& getSets() const;
 
+    const CacheStatistics& getStatistics() const;
+
 private:
     std::size_t cacheSize_;
     std::size_t blockSize_;

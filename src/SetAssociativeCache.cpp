@@ -152,3 +152,8 @@ const std::vector<CacheSet>&
 SetAssociativeCache::getSets() const {
     return sets_;
 }
+
+const CacheStatistics&
+SetAssociativeCache::getStatistics() const {
+    return statistics_;
+}
