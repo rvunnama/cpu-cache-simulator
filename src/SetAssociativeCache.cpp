@@ -108,3 +108,35 @@ bool SetAssociativeCache::access(std::uint64_t address) {
 
     return false;
 }
+
+std::uint64_t
+SetAssociativeCache::calculateBlockAddress(
+    std::uint64_t address
+) const {
+    return address / blockSize_;
+}
+
+std::size_t
+SetAssociativeCache::calculateSetIndex(
+    std::uint64_t blockAddress
+) const {
+    return static_cast<std::size_t>(
+        blockAddress % numberOfSets_
+    );
+}
+
+std::uint64_t
+SetAssociativeCache::calculateTag(
+    std::uint64_t blockAddress
+) const {
+    return blockAddress / numberOfSets_;
+}
+
+void SetAssociativeCache::printStatistics() const {
+    statistics_.printReport();
+}
+
+const std::vector<CacheSet>&
+SetAssociativeCache::getSets() const {
+    return sets_;
+}

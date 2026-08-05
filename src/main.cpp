@@ -15,6 +15,7 @@ namespace {
 struct ProgramOptions {
     std::size_t cacheSize = 64;
     std::size_t blockSize = 16;
+    std::size_t associativity = 1;
     std::string tracePath = "traces/basic.trace";
     bool verbose = false;
     bool visualize = false;
@@ -27,11 +28,13 @@ void printUsage(const std::string& programName) {
         << "  " << programName
         << " --cache-size <bytes>"
         << " --block-size <bytes>"
+        << " --associativity <ways>"
         << " --trace <file>"
         << " [--verbose]\n\n"
         << "Options:\n"
         << "  --cache-size <bytes>  Total cache capacity\n"
         << "  --block-size <bytes>  Number of bytes per block\n"
+        << "  --associativity <ways> Number of lines per set\n"
         << "  --trace <file>        Memory trace file\n"
         << "  --verbose             Print every cache access\n"
         << "  --visualize           Print the final cache state\n"
@@ -41,6 +44,7 @@ void printUsage(const std::string& programName) {
         << "  " << programName
         << " --cache-size 64"
         << " --block-size 16"
+        << " --associativity 2"
         << " --trace traces/basic.trace"
         << " --verbose\n";
 }
@@ -129,6 +133,17 @@ ProgramOptions parseArguments(int argc, char* argv[]) {
             }
 
             options.tracePath = argv[++index];
+        } else if (argument == "--associativity") {
+            if (index + 1 >= argc) {
+                throw std::invalid_argument(
+                    "Missing value after --associativity."
+                );
+            }
+
+            options.associativity = parseSize(
+                argv[++index],
+                "--associativity"
+            );
         } else {
             throw std::invalid_argument(
                 "Unknown option: " + argument
@@ -151,12 +166,10 @@ int main(int argc, char* argv[]) {
         const ProgramOptions options =
             parseArguments(argc, argv);
 
-        constexpr std::size_t associativity = 2;
-
         SetAssociativeCache cache(
             options.cacheSize,
             options.blockSize,
-            associativity
+            options.associativity
         );
 
         const std::vector<std::uint64_t> addresses =
@@ -176,7 +189,7 @@ int main(int argc, char* argv[]) {
                   << (options.verbose ? "enabled" : "disabled")
                   << "\n\n";
         std::cout << "Associativity: "
-                  << associativity
+                  << options.associativity
                   << "-way\n";
 
         for (const std::uint64_t address : addresses) {
@@ -192,15 +205,15 @@ int main(int argc, char* argv[]) {
                         << '\n';
             }
 
-            if (options.step) {
-                CacheVisualizer::print(cache);
-                waitForEnter();
-            }
+            //if (options.step) {
+                //CacheVisualizer::print(cache);
+                //waitForEnter();
+            //}
         }
 
        // if (options.visualize && !options.step) {
          //   CacheVisualizer::print(cache);
-       // }
+            // }
 
         cache.printStatistics();
 

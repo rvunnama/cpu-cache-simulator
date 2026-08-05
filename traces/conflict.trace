@@ -2,7 +2,3 @@
 0x0040
 0x0000
 0x0040
-
-Cache size: 64 bytes
-Block size: 16 bytes
-Associativity: 2
