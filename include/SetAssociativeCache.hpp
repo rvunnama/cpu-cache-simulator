@@ -3,6 +3,7 @@
 
 #include "CacheSet.hpp"
 #include "CacheStatistics.hpp"
+#include "ReplacementPolicy.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -13,7 +14,8 @@ public:
     SetAssociativeCache(
         std::size_t cacheSize,
         std::size_t blockSize,
-        std::size_t associativity
+        std::size_t associativity,
+        ReplacementPolicy replacementPolicy
     );
 
     bool access(std::uint64_t address);
@@ -28,6 +30,8 @@ private:
     std::size_t associativity_;
     std::size_t numberOfLines_;
     std::size_t numberOfSets_;
+
+    ReplacementPolicy replacementPolicy_;
 
     std::vector<CacheSet> sets_;
     CacheStatistics statistics_;

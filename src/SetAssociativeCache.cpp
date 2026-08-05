@@ -49,7 +49,8 @@ std::size_t validateAndCalculateLineCount(
 SetAssociativeCache::SetAssociativeCache(
     std::size_t cacheSize,
     std::size_t blockSize,
-    std::size_t associativity
+    std::size_t associativity,
+    ReplacementPolicy replacementPolicy
 )
     : cacheSize_(cacheSize),
       blockSize_(blockSize),
@@ -62,6 +63,7 @@ SetAssociativeCache::SetAssociativeCache(
           )
       ),
       numberOfSets_(numberOfLines_ / associativity_),
+      replacementPolicy_(replacementPolicy),
       sets_() {
 
     sets_.reserve(numberOfSets_);
