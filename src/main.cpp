@@ -2,6 +2,7 @@
 #include "TraceParser.hpp"
 #include "CacheVisualizer.hpp"
 #include "ReplacementPolicy.hpp"
+#include "BenchmarkRunner.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -40,6 +41,7 @@ void printUsage(const std::string& programName) {
         << " --replacement <policy>"
         << " --trace <file>"
         << " [--verbose]\n\n"
+        << "[--benchmark]\n\n"
         << "Options:\n"
         << "  --cache-size <bytes>   Total cache capacity\n"
         << "  --block-size <bytes>   Number of bytes per block\n"
@@ -49,7 +51,7 @@ void printUsage(const std::string& programName) {
         << "  --verbose              Print every cache access\n"
         << "  --visualize            Print the final cache state\n"
         << "  --step                 Pause after each access\n"
-        << "  --benchmark           Compare multiple cache configurations\n"
+        << "  --benchmark           Compare cache configurations\n"
         << "  --help                 Show this help message\n\n"
         << "Example:\n"
         << "  " << programName
@@ -221,86 +223,7 @@ void waitForEnter() {
     std::cin.get();
 }
 
-struct BenchmarkResult {
-    std::size_t cacheSize;
-    std::size_t blockSize;
-    std::size_t associativity;
-    ReplacementPolicy policy;
-    std::size_t hits;
-    std::size_t misses;
-    double hitRate;
-};
-
-void printBenchmarkResults(
-    const std::vector<BenchmarkResult>& results
-) {
-    std::cout << "\nBenchmark Results\n";
-    std::cout
-        << "---------------------------------------------------------------\n";
-
-    std::cout
-        << std::left
-        << std::setw(12) << "Cache"
-        << std::setw(12) << "Block"
-        << std::setw(16) << "Associativity"
-        << std::setw(10) << "Policy"
-        << std::setw(10) << "Hits"
-        << std::setw(10) << "Misses"
-        << "Hit Rate\n";
-
-    std::cout
-        << "---------------------------------------------------------------\n";
-
-    for (const BenchmarkResult& result : results) {
-        std::cout
-            << std::left
-            << std::setw(12) << result.cacheSize
-            << std::setw(12) << result.blockSize
-            << std::setw(16) << result.associativity
-            << std::setw(10)
-            << replacementPolicyToString(result.policy)
-            << std::setw(10) << result.hits
-            << std::setw(10) << result.misses
-            << std::fixed
-            << std::setprecision(2)
-            << result.hitRate
-            << "%\n";
-    }
-}
-
 }  // namespace
-
-BenchmarkResult runBenchmark(
-    const std::vector<std::uint64_t>& addresses,
-    std::size_t cacheSize,
-    std::size_t blockSize,
-    std::size_t associativity,
-    ReplacementPolicy policy
-) {
-    SetAssociativeCache cache(
-        cacheSize,
-        blockSize,
-        associativity,
-        policy
-    );
-
-    for (const std::uint64_t address : addresses) {
-        cache.access(address);
-    }
-
-    const CacheStatistics& statistics =
-        cache.getStatistics();
-
-    return {
-        cacheSize,
-        blockSize,
-        associativity,
-        policy,
-        statistics.getHits(),
-        statistics.getMisses(),
-        statistics.getHitRate()
-    };
-}
 
 int main(int argc, char* argv[]) {
     try {
@@ -318,44 +241,14 @@ int main(int argc, char* argv[]) {
             TraceParser::parseFile(options.tracePath);
 
         if (options.benchmark) {
-            const std::vector<std::size_t> associativities = {
-                1,
-                2,
-                4
-            };
+            const std::vector<BenchmarkResult> results =
+                BenchmarkRunner::run(
+                    addresses,
+                    options.cacheSize,
+                    options.blockSize
+                );
 
-            const std::vector<ReplacementPolicy> policies = {
-                ReplacementPolicy::FIFO,
-                ReplacementPolicy::LRU
-            };
-
-            std::vector<BenchmarkResult> results;
-
-            const std::size_t totalLines =
-                options.cacheSize / options.blockSize;
-
-            for (const std::size_t associativity : associativities) {
-                if (
-                    associativity > totalLines ||
-                    totalLines % associativity != 0
-                ) {
-                    continue;
-                }
-
-                for (const ReplacementPolicy policy : policies) {
-                    results.push_back(
-                        runBenchmark(
-                            addresses,
-                            options.cacheSize,
-                            options.blockSize,
-                            associativity,
-                            policy
-                        )
-                    );
-                }
-            }
-
-            printBenchmarkResults(results);
+            BenchmarkRunner::printResults(results);
             return 0;
         }
 
