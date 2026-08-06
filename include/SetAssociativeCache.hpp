@@ -5,6 +5,7 @@
 #include "CacheStatistics.hpp"
 #include "ReplacementPolicy.hpp"
 #include "MemoryAccess.hpp"
+#include "WritePolicy.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -16,7 +17,8 @@ public:
         std::size_t cacheSize,
         std::size_t blockSize,
         std::size_t associativity,
-        ReplacementPolicy replacementPolicy
+        ReplacementPolicy replacementPolicy,
+        WritePolicy writePolicy
     );
 
     bool access(const MemoryAccess& access);
@@ -35,6 +37,8 @@ private:
     std::size_t numberOfSets_;
 
     ReplacementPolicy replacementPolicy_;
+
+    WritePolicy writePolicy_;
 
     std::vector<CacheSet> sets_;
     CacheStatistics statistics_;

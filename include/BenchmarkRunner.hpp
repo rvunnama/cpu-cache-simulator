@@ -3,6 +3,7 @@
 
 #include "ReplacementPolicy.hpp"
 #include "MemoryAccess.hpp"
+#include "WritePolicy.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -17,6 +18,7 @@ struct BenchmarkResult {
     std::size_t hits;
     std::size_t misses;
     double hitRate;
+    WritePolicy writePolicy;
 };
 
 class BenchmarkRunner {

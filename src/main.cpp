@@ -4,6 +4,7 @@
 #include "ReplacementPolicy.hpp"
 #include "BenchmarkRunner.hpp"
 #include "MemoryAccess.hpp"
+#include "WritePolicy.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -27,6 +28,9 @@ struct ProgramOptions {
     ReplacementPolicy replacementPolicy =
         ReplacementPolicy::FIFO;
 
+    WritePolicy writePolicy =
+        WritePolicy::WriteThrough;
+
     bool verbose = false;
     bool visualize = false;
     bool step = false;
@@ -42,6 +46,7 @@ void printUsage(const std::string& programName) {
         << " --associativity <ways>"
         << " --replacement <policy>"
         << " --trace <file>"
+        << " --write-policy <policy>"
         << " [--verbose]\n\n"
         << "[--benchmark]\n\n"
         << "Options:\n"
@@ -55,6 +60,7 @@ void printUsage(const std::string& programName) {
         << "  --step                 Pause after each access\n"
         << "  --benchmark           Compare cache configurations\n"
         << "  --csv <file>          Export benchmark results to CSV\n"
+        << "  --write-policy <policy> write-through or write-back\n"
         << "  --help                 Show this help message\n\n"
         << "Example:\n"
         << "  " << programName
@@ -110,6 +116,24 @@ ReplacementPolicy parseReplacementPolicy(
     );
 }
 
+WritePolicy parseWritePolicy(
+    const std::string& text
+) {
+    if (text == "write-through") {
+        return WritePolicy::WriteThrough;
+    }
+
+    if (text == "write-back") {
+        return WritePolicy::WriteBack;
+    }
+
+    throw std::invalid_argument(
+        "Unsupported write policy: " + text +
+        ". Supported policies: write-through, write-back."
+    );
+}
+
+
 std::string replacementPolicyToString(
     ReplacementPolicy policy
 ) {
@@ -119,6 +143,20 @@ std::string replacementPolicyToString(
 
         case ReplacementPolicy::LRU:
             return "LRU";
+    }
+
+    return "Unknown";
+}
+
+std::string writePolicyToString(
+    WritePolicy policy
+) {
+    switch (policy) {
+        case WritePolicy::WriteThrough:
+            return "Write-through";
+
+        case WritePolicy::WriteBack:
+            return "Write-back";
     }
 
     return "Unknown";
@@ -220,6 +258,16 @@ ProgramOptions parseArguments(int argc, char* argv[]) {
 
             options.csvPath = argv[++index];
 
+        } else if (argument == "--write-policy") {
+            if (index + 1 >= argc) {
+                throw std::invalid_argument(
+                    "Missing value after --write-policy."
+                );
+            }
+
+            options.writePolicy =
+                parseWritePolicy(argv[++index]);
+
         } else {
             throw std::invalid_argument(
                 "Unknown option: " + argument
@@ -246,7 +294,8 @@ int main(int argc, char* argv[]) {
             options.cacheSize,
             options.blockSize,
             options.associativity,
-            options.replacementPolicy
+            options.replacementPolicy,
+            options.writePolicy
         );
           
         const std::vector<MemoryAccess> accesses =
@@ -293,10 +342,15 @@ int main(int argc, char* argv[]) {
                   << options.associativity
                   << "-way\n";
         std::cout << "Replacement policy: "
-          << replacementPolicyToString(
-                 options.replacementPolicy
-             )
-          << '\n';
+                  << replacementPolicyToString(
+                    options.replacementPolicy
+                    )
+                  << '\n';
+        std::cout << "Write policy: "
+                  << writePolicyToString(
+                    options.writePolicy
+                    )
+                  << '\n';
         
 
         for (const MemoryAccess& access : accesses) {
@@ -324,13 +378,7 @@ int main(int argc, char* argv[]) {
                 waitForEnter();
             }
         }
-
-            if (options.step) {
-                CacheVisualizer::print(cache);
-                waitForEnter();
-            }
         
-
         if (options.visualize && !options.step) {
             CacheVisualizer::print(cache);
         }

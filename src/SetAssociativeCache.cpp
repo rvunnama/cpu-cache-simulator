@@ -53,7 +53,8 @@ SetAssociativeCache::SetAssociativeCache(
     std::size_t cacheSize,
     std::size_t blockSize,
     std::size_t associativity,
-    ReplacementPolicy replacementPolicy
+    ReplacementPolicy replacementPolicy,
+    WritePolicy writePolicy
 )
     : cacheSize_(cacheSize),
       blockSize_(blockSize),
@@ -67,6 +68,7 @@ SetAssociativeCache::SetAssociativeCache(
       ),
       numberOfSets_(numberOfLines_ / associativity_),
       replacementPolicy_(replacementPolicy),
+      writePolicy_(writePolicy),
       sets_() {
 
     sets_.reserve(numberOfSets_);
@@ -101,6 +103,13 @@ bool SetAssociativeCache::access(
         if (line.valid && line.tag == tag) {
             line.lastAccessOrder = accessCounter_;
 
+            if (
+                access.type == AccessType::Write &&
+                writePolicy_ == WritePolicy::WriteBack
+            ) {
+                line.dirty = true;
+            }
+
             statistics_.recordHit();
             return true;
         }
@@ -114,6 +123,9 @@ bool SetAssociativeCache::access(
         );
 
     insertionLine.valid = true;
+    insertionLine.dirty =
+        access.type == AccessType::Write &&
+        writePolicy_ == WritePolicy::WriteBack;
     insertionLine.tag = tag;
     insertionLine.insertionOrder = accessCounter_;
     insertionLine.lastAccessOrder = accessCounter_;

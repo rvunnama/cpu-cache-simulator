@@ -65,7 +65,8 @@ BenchmarkResult BenchmarkRunner::runConfiguration(
         cacheSize,
         blockSize,
         associativity,
-        policy
+        policy,
+        WritePolicy::WriteThrough
     );
 
     for (const MemoryAccess& access : accesses) {

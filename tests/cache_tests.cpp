@@ -1,5 +1,6 @@
 #include "ReplacementPolicy.hpp"
 #include "SetAssociativeCache.hpp"
+#include "WritePolicy.hpp"
 
 #include <cassert>
 #include <cmath>
@@ -36,7 +37,8 @@ void testDirectMappedConflictMisses() {
         64,
         16,
         1,
-        ReplacementPolicy::FIFO
+        ReplacementPolicy::FIFO,
+        WritePolicy::WriteThrough
     );
 
     runTrace(cache, {
@@ -62,7 +64,8 @@ void testTwoWayAssociativityReducesConflicts() {
         64,
         16,
         2,
-        ReplacementPolicy::FIFO
+        ReplacementPolicy::FIFO,
+        WritePolicy::WriteThrough
     );
 
     runTrace(cache, {
@@ -87,7 +90,8 @@ void testFifoReplacement() {
         64,
         16,
         2,
-        ReplacementPolicy::FIFO
+        ReplacementPolicy::FIFO,
+        WritePolicy::WriteThrough
     );
 
     runTrace(cache, {
@@ -114,7 +118,8 @@ void testLruReplacement() {
         64,
         16,
         2,
-        ReplacementPolicy::LRU
+        ReplacementPolicy::LRU,
+        WritePolicy::WriteThrough
     );
 
     runTrace(cache, {
@@ -141,7 +146,8 @@ void testStatisticsRates() {
         64,
         16,
         2,
-        ReplacementPolicy::FIFO
+        ReplacementPolicy::FIFO,
+        WritePolicy::WriteThrough
     );
 
     runTrace(cache, {
@@ -180,7 +186,8 @@ void testInvalidConfiguration() {
             64,
             16,
             3,
-            ReplacementPolicy::FIFO
+            ReplacementPolicy::FIFO,
+            WritePolicy::WriteThrough
         );
     } catch (const std::invalid_argument&) {
         exceptionThrown = true;
@@ -192,6 +199,29 @@ void testInvalidConfiguration() {
         << "PASS: invalid configuration rejected\n";
 }
 
+void testWriteBackMarksLineDirty() {
+    SetAssociativeCache cache(
+        64,
+        16,
+        2,
+        ReplacementPolicy::LRU,
+        WritePolicy::WriteBack
+    );
+
+    cache.access({
+        AccessType::Write,
+        0x0000
+    });
+
+    const std::vector<CacheSet>& sets =
+        cache.getSets();
+
+    assert(sets[0].getLines()[0].dirty);
+
+    std::cout
+        << "PASS: write-back marks cache line dirty\n";
+}
+
 }  // namespace
 
 int main() {
@@ -201,7 +231,8 @@ int main() {
     testLruReplacement();
     testStatisticsRates();
     testInvalidConfiguration();
-
+    testWriteBackMarksLineDirty();
+    
     std::cout << "\nAll cache tests passed.\n";
 
     return 0;

@@ -13,7 +13,7 @@ void CacheVisualizer::print(
 
     std::cout << "\nCache State\n";
     std::cout
-        << "--------------------------------------------------\n";
+        << "--------------------------------------------------------------\n";
 
     for (
         std::size_t setIndex = 0;
@@ -21,6 +21,7 @@ void CacheVisualizer::print(
         ++setIndex
     ) {
         const CacheSet& set = sets[setIndex];
+
         const std::vector<CacheLine>& lines =
             set.getLines();
 
@@ -28,11 +29,12 @@ void CacheVisualizer::print(
 
         std::cout
             << std::left
-            << std::setw(10) << wayIndex
-            << std::setw(10)
-            << (line.valid ? "YES" : "NO")
-            << std::setw(10)
-            << (line.dirty ? "YES" : "NO");
+            << std::setw(10) << "Way"
+            << std::setw(10) << "Valid"
+            << std::setw(10) << "Dirty"
+            << std::setw(14) << "Tag"
+            << std::setw(18) << "Inserted"
+            << "Last Access\n";
 
         for (
             std::size_t wayIndex = 0;
@@ -45,7 +47,9 @@ void CacheVisualizer::print(
                 << std::left
                 << std::setw(10) << wayIndex
                 << std::setw(10)
-                << (line.valid ? "YES" : "NO");
+                << (line.valid ? "YES" : "NO")
+                << std::setw(10)
+                << (line.dirty ? "YES" : "NO");
 
             if (line.valid) {
                 std::cout
@@ -68,6 +72,6 @@ void CacheVisualizer::print(
         }
 
         std::cout
-            << "--------------------------------------------------\n";
+            << "--------------------------------------------------------------\n";
     }
 }
