@@ -300,7 +300,7 @@ int main(int argc, char* argv[]) {
         
 
         for (const MemoryAccess& access : accesses) {
-            const bool hit = cache.access(access.address);
+            const bool hit = cache.access(access);
 
             if (options.verbose) {
                 std::cout

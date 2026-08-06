@@ -28,11 +28,11 @@ void CacheVisualizer::print(
 
         std::cout
             << std::left
-            << std::setw(10) << "Way"
-            << std::setw(10) << "Valid"
-            << std::setw(14) << "Tag"
-            << std::setw(18) << "Inserted"
-            << "Last Access\n";
+            << std::setw(10) << wayIndex
+            << std::setw(10)
+            << (line.valid ? "YES" : "NO")
+            << std::setw(10)
+            << (line.dirty ? "YES" : "NO");
 
         for (
             std::size_t wayIndex = 0;

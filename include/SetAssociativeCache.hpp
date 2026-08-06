@@ -4,6 +4,7 @@
 #include "CacheSet.hpp"
 #include "CacheStatistics.hpp"
 #include "ReplacementPolicy.hpp"
+#include "MemoryAccess.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -18,7 +19,7 @@ public:
         ReplacementPolicy replacementPolicy
     );
 
-    bool access(std::uint64_t address);
+    bool access(const MemoryAccess& access);
 
     void printStatistics() const;
 

@@ -16,7 +16,10 @@ void runTrace(
     const std::vector<std::uint64_t>& addresses
 ) {
     for (const std::uint64_t address : addresses) {
-        cache.access(address);
+        cache.access({
+            AccessType::Read,
+            address
+        });
     }
 }
 

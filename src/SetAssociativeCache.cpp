@@ -81,12 +81,12 @@ SetAssociativeCache::SetAssociativeCache(
 }
 
 bool SetAssociativeCache::access(
-    std::uint64_t address
+    const MemoryAccess& access
 ) {
     ++accessCounter_;
 
     const std::uint64_t blockAddress =
-        calculateBlockAddress(address);
+        calculateBlockAddress(access.address);
 
     const std::size_t setIndex =
         calculateSetIndex(blockAddress);

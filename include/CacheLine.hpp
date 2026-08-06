@@ -6,6 +6,8 @@
 
 struct CacheLine {
     bool valid = false;
+    bool dirty = false;
+
     std::uint64_t tag = 0;
 
     std::size_t insertionOrder = 0;

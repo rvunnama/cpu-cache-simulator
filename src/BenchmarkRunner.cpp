@@ -69,7 +69,7 @@ BenchmarkResult BenchmarkRunner::runConfiguration(
     );
 
     for (const MemoryAccess& access : accesses) {
-        cache.access(access.address);
+        cache.access(access);
     }
 
     const CacheStatistics& statistics =
