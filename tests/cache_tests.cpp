@@ -1,0 +1,205 @@
+#include "ReplacementPolicy.hpp"
+#include "SetAssociativeCache.hpp"
+
+#include <cassert>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <iostream>
+#include <stdexcept>
+#include <vector>
+
+namespace {
+
+void runTrace(
+    SetAssociativeCache& cache,
+    const std::vector<std::uint64_t>& addresses
+) {
+    for (const std::uint64_t address : addresses) {
+        cache.access(address);
+    }
+}
+
+bool approximatelyEqual(
+    double first,
+    double second,
+    double tolerance = 0.0001
+) {
+    return std::fabs(first - second) < tolerance;
+}
+
+void testDirectMappedConflictMisses() {
+    SetAssociativeCache cache(
+        64,
+        16,
+        1,
+        ReplacementPolicy::FIFO
+    );
+
+    runTrace(cache, {
+        0x0000,
+        0x0040,
+        0x0000,
+        0x0040
+    });
+
+    const CacheStatistics& statistics =
+        cache.getStatistics();
+
+    assert(statistics.getHits() == 0);
+    assert(statistics.getMisses() == 4);
+    assert(statistics.getTotalAccesses() == 4);
+
+    std::cout
+        << "PASS: direct-mapped conflict misses\n";
+}
+
+void testTwoWayAssociativityReducesConflicts() {
+    SetAssociativeCache cache(
+        64,
+        16,
+        2,
+        ReplacementPolicy::FIFO
+    );
+
+    runTrace(cache, {
+        0x0000,
+        0x0040,
+        0x0000,
+        0x0040
+    });
+
+    const CacheStatistics& statistics =
+        cache.getStatistics();
+
+    assert(statistics.getHits() == 2);
+    assert(statistics.getMisses() == 2);
+
+    std::cout
+        << "PASS: two-way associativity reduces conflicts\n";
+}
+
+void testFifoReplacement() {
+    SetAssociativeCache cache(
+        64,
+        16,
+        2,
+        ReplacementPolicy::FIFO
+    );
+
+    runTrace(cache, {
+        0x0000,
+        0x0040,
+        0x0000,
+        0x0080,
+        0x0000,
+        0x0040
+    });
+
+    const CacheStatistics& statistics =
+        cache.getStatistics();
+
+    assert(statistics.getHits() == 1);
+    assert(statistics.getMisses() == 5);
+
+    std::cout
+        << "PASS: FIFO replacement\n";
+}
+
+void testLruReplacement() {
+    SetAssociativeCache cache(
+        64,
+        16,
+        2,
+        ReplacementPolicy::LRU
+    );
+
+    runTrace(cache, {
+        0x0000,
+        0x0040,
+        0x0000,
+        0x0080,
+        0x0000,
+        0x0040
+    });
+
+    const CacheStatistics& statistics =
+        cache.getStatistics();
+
+    assert(statistics.getHits() == 2);
+    assert(statistics.getMisses() == 4);
+
+    std::cout
+        << "PASS: LRU replacement\n";
+}
+
+void testStatisticsRates() {
+    SetAssociativeCache cache(
+        64,
+        16,
+        2,
+        ReplacementPolicy::FIFO
+    );
+
+    runTrace(cache, {
+        0x0000,
+        0x0040,
+        0x0000,
+        0x0040
+    });
+
+    const CacheStatistics& statistics =
+        cache.getStatistics();
+
+    assert(
+        approximatelyEqual(
+            statistics.getHitRate(),
+            50.0
+        )
+    );
+
+    assert(
+        approximatelyEqual(
+            statistics.getMissRate(),
+            50.0
+        )
+    );
+
+    std::cout
+        << "PASS: statistics rates\n";
+}
+
+void testInvalidConfiguration() {
+    bool exceptionThrown = false;
+
+    try {
+        SetAssociativeCache cache(
+            64,
+            16,
+            3,
+            ReplacementPolicy::FIFO
+        );
+    } catch (const std::invalid_argument&) {
+        exceptionThrown = true;
+    }
+
+    assert(exceptionThrown);
+
+    std::cout
+        << "PASS: invalid configuration rejected\n";
+}
+
+}  // namespace
+
+int main() {
+    testDirectMappedConflictMisses();
+    testTwoWayAssociativityReducesConflicts();
+    testFifoReplacement();
+    testLruReplacement();
+    testStatisticsRates();
+    testInvalidConfiguration();
+
+    std::cout << "\nAll cache tests passed.\n";
+
+    return 0;
+}
