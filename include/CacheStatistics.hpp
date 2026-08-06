@@ -17,9 +17,24 @@ public:
 
     void printReport() const;
 
+    void recordMemoryRead();
+
+    void recordMemoryWrite();
+
+    void recordDirtyEviction();
+
+    std::size_t getMemoryReads() const;
+
+    std::size_t getMemoryWrites() const;
+
+    std::size_t getDirtyEvictions() const;
+
 private:
     std::size_t hits_ = 0;
     std::size_t misses_ = 0;
+    std::size_t memoryReads_ = 0;
+    std::size_t memoryWrites_ = 0;
+    std::size_t dirtyEvictions_ = 0;
 };
 
 #endif

@@ -110,17 +110,34 @@ bool SetAssociativeCache::access(
                 line.dirty = true;
             }
 
+            if (
+                access.type == AccessType::Write &&
+                writePolicy_ == WritePolicy::WriteThrough
+            ) {
+                statistics_.recordMemoryWrite();
+            }
+
             statistics_.recordHit();
             return true;
         }
     }
 
     statistics_.recordMiss();
+    statistics_.recordMemoryRead();
 
     CacheLine& insertionLine =
         set.selectLineForInsertion(
             replacementPolicy_
         );
+
+    if (
+        insertionLine.valid &&
+        insertionLine.dirty &&
+        writePolicy_ == WritePolicy::WriteBack
+    ) {
+        statistics_.recordDirtyEviction();
+        statistics_.recordMemoryWrite();
+    }
 
     insertionLine.valid = true;
     insertionLine.dirty =
@@ -129,6 +146,13 @@ bool SetAssociativeCache::access(
     insertionLine.tag = tag;
     insertionLine.insertionOrder = accessCounter_;
     insertionLine.lastAccessOrder = accessCounter_;
+
+    if (
+        access.type == AccessType::Write &&
+        writePolicy_ == WritePolicy::WriteThrough
+    ) {
+        statistics_.recordMemoryWrite();
+    }
 
     return false;
 }

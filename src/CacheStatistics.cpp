@@ -11,6 +11,18 @@ void CacheStatistics::recordMiss() {
     ++misses_;
 }
 
+void CacheStatistics::recordMemoryRead() {
+    ++memoryReads_;
+}
+
+void CacheStatistics::recordMemoryWrite() {
+    ++memoryWrites_;
+}
+
+void CacheStatistics::recordDirtyEviction() {
+    ++dirtyEvictions_;
+}
+
 std::size_t CacheStatistics::getHits() const {
     return hits_;
 }
@@ -47,6 +59,18 @@ double CacheStatistics::getMissRate() const {
            100.0;
 }
 
+std::size_t CacheStatistics::getMemoryReads() const {
+    return memoryReads_;
+}
+
+std::size_t CacheStatistics::getMemoryWrites() const {
+    return memoryWrites_;
+}
+
+std::size_t CacheStatistics::getDirtyEvictions() const {
+    return dirtyEvictions_;
+}
+
 void CacheStatistics::printReport() const {
     std::cout << "\nStatistics\n";
     std::cout << "----------\n";
@@ -57,4 +81,19 @@ void CacheStatistics::printReport() const {
     std::cout << std::fixed << std::setprecision(2);
     std::cout << "Hit rate: " << getHitRate() << "%\n";
     std::cout << "Miss rate: " << getMissRate() << "%\n";
+
+    std::cout
+        << "Memory reads: "
+        << memoryReads_
+        << '\n';
+
+    std::cout
+        << "Memory writes: "
+        << memoryWrites_
+        << '\n';
+
+    std::cout
+        << "Dirty evictions: "
+        << dirtyEvictions_
+        << '\n';
 }

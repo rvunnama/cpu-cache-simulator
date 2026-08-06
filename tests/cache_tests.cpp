@@ -222,6 +222,66 @@ void testWriteBackMarksLineDirty() {
         << "PASS: write-back marks cache line dirty\n";
 }
 
+void testWriteThroughMemoryTraffic() {
+    SetAssociativeCache cache(
+        64,
+        16,
+        2,
+        ReplacementPolicy::LRU,
+        WritePolicy::WriteThrough
+    );
+
+    cache.access({
+        AccessType::Write,
+        0x0000
+    });
+
+    cache.access({
+        AccessType::Write,
+        0x0000
+    });
+
+    const CacheStatistics& statistics =
+        cache.getStatistics();
+
+    assert(statistics.getMemoryReads() == 1);
+    assert(statistics.getMemoryWrites() == 2);
+    assert(statistics.getDirtyEvictions() == 0);
+
+    std::cout
+        << "PASS: write-through memory traffic\n";
+}
+
+void testWriteBackDirtyEviction() {
+    SetAssociativeCache cache(
+        32,
+        16,
+        1,
+        ReplacementPolicy::FIFO,
+        WritePolicy::WriteBack
+    );
+
+    cache.access({
+        AccessType::Write,
+        0x0000
+    });
+
+    cache.access({
+        AccessType::Write,
+        0x0020
+    });
+
+    const CacheStatistics& statistics =
+        cache.getStatistics();
+
+    assert(statistics.getMemoryReads() == 2);
+    assert(statistics.getMemoryWrites() == 1);
+    assert(statistics.getDirtyEvictions() == 1);
+
+    std::cout
+        << "PASS: write-back dirty eviction\n";
+}
+
 }  // namespace
 
 int main() {
@@ -232,7 +292,9 @@ int main() {
     testStatisticsRates();
     testInvalidConfiguration();
     testWriteBackMarksLineDirty();
-    
+    testWriteThroughMemoryTraffic();
+    testWriteBackDirtyEviction();
+
     std::cout << "\nAll cache tests passed.\n";
 
     return 0;
