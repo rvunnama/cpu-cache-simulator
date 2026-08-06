@@ -39,6 +39,9 @@ struct ProgramOptions {
     bool visualize = false;
     bool step = false;
     bool benchmark = false;
+
+    double cacheAccessTime = 1.0;
+    double memoryPenalty = 100.0;
 };
 
 void printUsage(const std::string& programName) {
@@ -68,6 +71,8 @@ void printUsage(const std::string& programName) {
         << "  --write-policy <policy> write-through or write-back\n"
         << "  --write-miss-policy <policy>"
         << " write-allocate or no-write-allocate\n"
+        << "  --cache-latency <ns>  Cache access time in nanoseconds\n"
+        << "  --memory-penalty <ns> Additional latency for a cache miss\n"
         << "  --help                 Show this help message\n\n"
         << "Example:\n"
         << "  " << programName
@@ -76,7 +81,9 @@ void printUsage(const std::string& programName) {
         << " --associativity 2"
         << " --replacement fifo"
         << " --trace traces/basic.trace"
-        << " --verbose\n";
+        << " --verbose\n"
+        << " --cache-latency 1"
+        << " --memory-penalty 100";
 }
 
 std::size_t parseSize(
@@ -156,6 +163,36 @@ WriteMissPolicy parseWriteMissPolicy(
         ". Supported policies: write-allocate, "
         "no-write-allocate."
     );
+}
+
+double parsePositiveDouble(
+    const std::string& text,
+    const std::string& optionName
+) {
+    std::size_t processedCharacters = 0;
+
+    const double value = std::stod(
+        text,
+        &processedCharacters
+    );
+
+    if (processedCharacters != text.size()) {
+        throw std::invalid_argument(
+            "Invalid value for " +
+            optionName +
+            ": " +
+            text
+        );
+    }
+
+    if (value <= 0.0) {
+        throw std::invalid_argument(
+            optionName +
+            " must be greater than zero."
+        );
+    }
+
+    return value;
 }
 
 std::string replacementPolicyToString(
@@ -316,6 +353,32 @@ ProgramOptions parseArguments(int argc, char* argv[]) {
             options.writeMissPolicy =
                 parseWriteMissPolicy(argv[++index]);
 
+        } else if (argument == "--cache-latency") {
+            if (index + 1 >= argc) {
+                throw std::invalid_argument(
+                    "Missing value after --cache-latency."
+                );
+            }
+
+            options.cacheAccessTime =
+                parsePositiveDouble(
+                    argv[++index],
+                    "--cache-latency"
+                );
+
+        } else if (argument == "--memory-penalty") {
+            if (index + 1 >= argc) {
+                throw std::invalid_argument(
+                    "Missing value after --memory-penalty."
+                );
+            }
+
+            options.memoryPenalty =
+                parsePositiveDouble(
+                    argv[++index],
+                    "--memory-penalty"
+                );
+
         } else {
             throw std::invalid_argument(
                 "Unknown option: " + argument
@@ -438,6 +501,30 @@ int main(int argc, char* argv[]) {
         }
 
         cache.printStatistics();
+
+        const CacheStatistics& statistics =
+            cache.getStatistics();
+
+        const double amat =
+            statistics.calculateAmat(
+                options.cacheAccessTime,
+                options.memoryPenalty
+            );
+
+        std::cout << std::fixed
+                << std::setprecision(2);
+
+        std::cout << "Cache latency: "
+                << options.cacheAccessTime
+                << " ns\n";
+
+        std::cout << "Memory penalty: "
+                << options.memoryPenalty
+                << " ns\n";
+
+        std::cout << "Estimated AMAT: "
+                << amat
+                << " ns\n";
 
     } catch (const std::exception& error) {
         std::cerr << "Error: "

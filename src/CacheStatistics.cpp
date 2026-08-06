@@ -71,6 +71,17 @@ std::size_t CacheStatistics::getDirtyEvictions() const {
     return dirtyEvictions_;
 }
 
+double CacheStatistics::calculateAmat(
+    double cacheAccessTime,
+    double memoryPenalty
+) const {
+    const double missRateFraction =
+        getMissRate() / 100.0;
+
+    return cacheAccessTime +
+           missRateFraction * memoryPenalty;
+}
+
 void CacheStatistics::printReport() const {
     std::cout << "\nStatistics\n";
     std::cout << "----------\n";

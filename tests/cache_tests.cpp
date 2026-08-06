@@ -349,6 +349,42 @@ void testNoWriteAllocateBypassesCache() {
         << "PASS: no-write-allocate bypasses cache\n";
 }
 
+void testAmatCalculation() {
+    SetAssociativeCache cache(
+        64,
+        16,
+        2,
+        ReplacementPolicy::FIFO,
+        WritePolicy::WriteThrough,
+        WriteMissPolicy::WriteAllocate
+    );
+
+    runTrace(cache, {
+        0x0000,
+        0x0040,
+        0x0000,
+        0x0040
+    });
+
+    const CacheStatistics& statistics =
+        cache.getStatistics();
+
+    const double amat =
+        statistics.calculateAmat(
+            1.0,
+            100.0
+        );
+
+    assert(
+        approximatelyEqual(
+            amat,
+            51.0
+        )
+    );
+
+    std::cout << "PASS: AMAT calculation\n";
+}
+
 }  // namespace
 
 int main() {
@@ -363,6 +399,7 @@ int main() {
     testWriteBackDirtyEviction();
     testWriteAllocateLoadsBlock();
     testNoWriteAllocateBypassesCache();
+    testAmatCalculation();
 
     std::cout << "\nAll cache tests passed.\n";
 

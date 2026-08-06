@@ -29,6 +29,11 @@ public:
 
     std::size_t getDirtyEvictions() const;
 
+    double calculateAmat(
+        double cacheAccessTime,
+        double memoryPenalty
+    ) const;
+
 private:
     std::size_t hits_ = 0;
     std::size_t misses_ = 0;
