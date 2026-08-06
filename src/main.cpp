@@ -6,6 +6,7 @@
 #include "MemoryAccess.hpp"
 #include "WritePolicy.hpp"
 #include "WriteMissPolicy.hpp"
+#include "CacheAccessResult.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -493,7 +494,10 @@ int main(int argc, char* argv[]) {
         
 
         for (const MemoryAccess& access : accesses) {
-            const bool hit = cache.access(access);
+            const CacheAccessResult result =
+                cache.access(access);
+
+            const bool hit = result.hit;
 
             if (options.verbose) {
                 std::cout

@@ -8,6 +8,7 @@
 #include "WritePolicy.hpp"
 #include "WriteMissPolicy.hpp"
 #include "MissClassifier.hpp"
+#include "CacheAccessResult.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -24,7 +25,9 @@ public:
         WriteMissPolicy writeMissPolicy
     );
 
-    bool access(const MemoryAccess& access);
+    CacheAccessResult access(
+        const MemoryAccess& access
+    );
 
     void printStatistics() const;
 

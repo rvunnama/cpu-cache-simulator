@@ -2,6 +2,7 @@
 #include "SetAssociativeCache.hpp"
 #include "WritePolicy.hpp"
 #include "WriteMissPolicy.hpp"
+#include "CacheAccessResult.hpp"
 
 #include <cassert>
 #include <cmath>
@@ -307,10 +308,13 @@ void testWriteAllocateLoadsBlock() {
         0x0000
     });
 
-    const bool secondAccessHit = cache.access({
-        AccessType::Read,
-        0x0000
-    });
+    const CacheAccessResult result =
+        cache.access({
+            AccessType::Read,
+            0x0000
+        });
+
+    const bool secondAccessHit = result.hit;
 
     assert(secondAccessHit);
 
@@ -333,10 +337,13 @@ void testNoWriteAllocateBypassesCache() {
         0x0000
     });
 
-    const bool secondAccessHit = cache.access({
-        AccessType::Read,
-        0x0000
-    });
+    const CacheAccessResult result =
+        cache.access({
+            AccessType::Read,
+            0x0000
+        });
+
+    const bool secondAccessHit = result.hit;
 
     const CacheStatistics& statistics =
         cache.getStatistics();
@@ -681,6 +688,36 @@ void testTotalClassifiedMisses() {
     );
 }
 
+void testCacheAccessResultReportsEviction() {
+    SetAssociativeCache cache(
+        16,
+        16,
+        1,
+        ReplacementPolicy::FIFO,
+        WritePolicy::WriteBack,
+        WriteMissPolicy::WriteAllocate
+    );
+
+    cache.access({
+        AccessType::Write,
+        0x0000
+    });
+
+    const CacheAccessResult result =
+        cache.access({
+            AccessType::Read,
+            0x0010
+        });
+
+    assert(!result.hit);
+    assert(result.evictionOccurred);
+    assert(result.dirtyEviction);
+    assert(result.evictedBlockAddress == 0);
+
+    std::cout
+        << "PASS: cache access result reports eviction\n";
+}
+
 }  // namespace
 
 int main() {
@@ -705,6 +742,7 @@ int main() {
     testCapacityMissClassification();
     testBypassMissClassification();
     testTotalClassifiedMisses();
+    testCacheAccessResultReportsEviction();
 
     std::cout << "\nAll cache tests passed.\n";
 

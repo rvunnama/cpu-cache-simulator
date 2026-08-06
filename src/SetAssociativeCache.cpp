@@ -98,7 +98,7 @@ SetAssociativeCache::SetAssociativeCache(
     }
 }
 
-bool SetAssociativeCache::access(
+CacheAccessResult SetAssociativeCache::access(
     const MemoryAccess& access
 ) {
     ++accessCounter_;
@@ -141,7 +141,13 @@ bool SetAssociativeCache::access(
                 false
             );
 
-            return true;
+            return {
+                true,   // hit
+                false,  // bypassed
+                false,  // eviction occurred
+                false,  // dirty eviction
+                0       // evicted block
+            };
         }
     }
 
@@ -163,7 +169,14 @@ bool SetAssociativeCache::access(
 
     if (bypassedCache) {
         statistics_.recordMemoryWrite();
-        return false;
+
+        return {
+            false,
+            true,
+            false,
+            false,
+            0
+        };
     }
 
     statistics_.recordMemoryRead();
@@ -173,20 +186,32 @@ bool SetAssociativeCache::access(
             replacementPolicy_
         );
 
-    if (
+    const bool evictionOccurred =
+        insertionLine.valid;
+
+    const bool dirtyEviction =
         insertionLine.valid &&
         insertionLine.dirty &&
-        writePolicy_ == WritePolicy::WriteBack
-    ) {
+        writePolicy_ == WritePolicy::WriteBack;
+
+    const std::uint64_t evictedBlockAddress =
+        evictionOccurred
+            ? insertionLine.blockAddress
+            : 0;
+
+    if (dirtyEviction) {
         statistics_.recordDirtyEviction();
         statistics_.recordMemoryWrite();
     }
 
     insertionLine.valid = true;
+
     insertionLine.dirty =
         access.type == AccessType::Write &&
         writePolicy_ == WritePolicy::WriteBack;
+
     insertionLine.tag = tag;
+    insertionLine.blockAddress = blockAddress;
     insertionLine.insertionOrder = accessCounter_;
     insertionLine.lastAccessOrder = accessCounter_;
 
@@ -197,7 +222,13 @@ bool SetAssociativeCache::access(
         statistics_.recordMemoryWrite();
     }
 
-    return false;
+    return {
+        false,
+        false,
+        evictionOccurred,
+        dirtyEviction,
+        evictedBlockAddress
+    };
 }
 
 std::uint64_t
