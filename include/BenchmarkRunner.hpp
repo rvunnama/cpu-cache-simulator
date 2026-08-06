@@ -1,24 +1,31 @@
 #ifndef BENCHMARK_RUNNER_HPP
 #define BENCHMARK_RUNNER_HPP
 
-#include "ReplacementPolicy.hpp"
 #include "MemoryAccess.hpp"
+#include "ReplacementPolicy.hpp"
+#include "WriteMissPolicy.hpp"
 #include "WritePolicy.hpp"
 
 #include <cstddef>
-#include <cstdint>
-#include <vector>
 #include <string>
+#include <vector>
 
 struct BenchmarkResult {
     std::size_t cacheSize;
     std::size_t blockSize;
     std::size_t associativity;
-    ReplacementPolicy policy;
+
+    ReplacementPolicy replacementPolicy;
+    WritePolicy writePolicy;
+    WriteMissPolicy writeMissPolicy;
+
     std::size_t hits;
     std::size_t misses;
+    std::size_t memoryReads;
+    std::size_t memoryWrites;
+    std::size_t dirtyEvictions;
+
     double hitRate;
-    WritePolicy writePolicy;
 };
 
 class BenchmarkRunner {
@@ -44,11 +51,21 @@ private:
         std::size_t cacheSize,
         std::size_t blockSize,
         std::size_t associativity,
+        ReplacementPolicy replacementPolicy,
+        WritePolicy writePolicy,
+        WriteMissPolicy writeMissPolicy
+    );
+
+    static const char* replacementPolicyToString(
         ReplacementPolicy policy
     );
 
-    static const char* policyToString(
-        ReplacementPolicy policy
+    static const char* writePolicyToString(
+        WritePolicy policy
+    );
+
+    static const char* writeMissPolicyToString(
+        WriteMissPolicy policy
     );
 };
 
