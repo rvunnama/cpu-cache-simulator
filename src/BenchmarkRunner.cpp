@@ -10,7 +10,7 @@
 #include <stdexcept>
 
 std::vector<BenchmarkResult> BenchmarkRunner::run(
-    const std::vector<std::uint64_t>& addresses,
+    const std::vector<MemoryAccess>& accesses,
     std::size_t cacheSize,
     std::size_t blockSize
 ) {
@@ -41,7 +41,7 @@ std::vector<BenchmarkResult> BenchmarkRunner::run(
         for (const ReplacementPolicy policy : policies) {
             results.push_back(
                 runConfiguration(
-                    addresses,
+                    accesses,
                     cacheSize,
                     blockSize,
                     associativity,
@@ -55,7 +55,7 @@ std::vector<BenchmarkResult> BenchmarkRunner::run(
 }
 
 BenchmarkResult BenchmarkRunner::runConfiguration(
-    const std::vector<std::uint64_t>& addresses,
+    const std::vector<MemoryAccess>& accesses,
     std::size_t cacheSize,
     std::size_t blockSize,
     std::size_t associativity,
@@ -68,8 +68,8 @@ BenchmarkResult BenchmarkRunner::runConfiguration(
         policy
     );
 
-    for (const std::uint64_t address : addresses) {
-        cache.access(address);
+    for (const MemoryAccess& access : accesses) {
+        cache.access(access.address);
     }
 
     const CacheStatistics& statistics =

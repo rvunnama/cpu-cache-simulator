@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <sstream>
 
 namespace {
 
@@ -45,7 +46,7 @@ std::string removeComment(const std::string& text) {
 
 }  // namespace
 
-std::vector<std::uint64_t> TraceParser::parseFile(
+std::vector<MemoryAccess> TraceParser::parseFile(
     const std::string& filePath
 ) {
     std::ifstream inputFile(filePath);
@@ -56,7 +57,7 @@ std::vector<std::uint64_t> TraceParser::parseFile(
         );
     }
 
-    std::vector<std::uint64_t> addresses;
+    std::vector<MemoryAccess> accesses;
     std::string line;
     std::size_t lineNumber = 0;
 
@@ -71,12 +72,12 @@ std::vector<std::uint64_t> TraceParser::parseFile(
         }
 
         try {
-            addresses.push_back(
-                parseAddress(cleanedLine)
+            accesses.push_back(
+                parseLine(cleanedLine)
             );
         } catch (const std::exception& error) {
             throw std::runtime_error(
-                "Invalid address on line " +
+                "Invalid trace entry on line " +
                 std::to_string(lineNumber) +
                 ": " +
                 error.what()
@@ -84,25 +85,65 @@ std::vector<std::uint64_t> TraceParser::parseFile(
         }
     }
 
-    return addresses;
+    return accesses;
 }
 
-std::uint64_t TraceParser::parseAddress(
+MemoryAccess TraceParser::parseLine(
     const std::string& text
 ) {
+    std::istringstream stream(text);
+
+    std::string firstToken;
+    std::string secondToken;
+
+    stream >> firstToken;
+
+    if (!(stream >> secondToken)) {
+        // Backward compatibility:
+        // an address by itself is treated as a read.
+        secondToken = firstToken;
+        firstToken = "R";
+    }
+
+    std::string extraToken;
+
+    if (stream >> extraToken) {
+        throw std::invalid_argument(
+            "Unexpected extra data."
+        );
+    }
+
+    AccessType type;
+
+    if (firstToken == "R" || firstToken == "r") {
+        type = AccessType::Read;
+    } else if (
+        firstToken == "W" ||
+        firstToken == "w"
+    ) {
+        type = AccessType::Write;
+    } else {
+        throw std::invalid_argument(
+            "Access type must be R or W."
+        );
+    }
+
     std::size_t processedCharacters = 0;
 
     const std::uint64_t address = std::stoull(
-        text,
+        secondToken,
         &processedCharacters,
         0
     );
 
-    if (processedCharacters != text.size()) {
+    if (processedCharacters != secondToken.size()) {
         throw std::invalid_argument(
             "Unexpected characters after address."
         );
     }
 
-    return address;
+    return {
+        type,
+        address
+    };
 }

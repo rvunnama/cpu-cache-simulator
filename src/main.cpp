@@ -3,6 +3,7 @@
 #include "CacheVisualizer.hpp"
 #include "ReplacementPolicy.hpp"
 #include "BenchmarkRunner.hpp"
+#include "MemoryAccess.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -248,13 +249,13 @@ int main(int argc, char* argv[]) {
             options.replacementPolicy
         );
           
-        const std::vector<std::uint64_t> addresses =
+        const std::vector<MemoryAccess> accesses =
             TraceParser::parseFile(options.tracePath);
 
         if (options.benchmark) {
             const std::vector<BenchmarkResult> results =
                 BenchmarkRunner::run(
-                    addresses,
+                    accesses,
                     options.cacheSize,
                     options.blockSize
                 );
@@ -298,17 +299,24 @@ int main(int argc, char* argv[]) {
           << '\n';
         
 
-        for (const std::uint64_t address : addresses) {
-            const bool hit = cache.access(address);
+        for (const MemoryAccess& access : accesses) {
+            const bool hit = cache.access(access.address);
 
             if (options.verbose) {
-                std::cout << "\nAddress 0x"
-                        << std::hex
-                        << address
-                        << std::dec
-                        << ": "
-                        << (hit ? "HIT" : "MISS")
-                        << '\n';
+                std::cout
+                    << "\n"
+                    << (
+                        access.type == AccessType::Read
+                            ? "READ"
+                            : "WRITE"
+                    )
+                    << " 0x"
+                    << std::hex
+                    << access.address
+                    << std::dec
+                    << ": "
+                    << (hit ? "HIT" : "MISS")
+                    << '\n';
             }
 
             if (options.step) {
@@ -316,6 +324,12 @@ int main(int argc, char* argv[]) {
                 waitForEnter();
             }
         }
+
+            if (options.step) {
+                CacheVisualizer::print(cache);
+                waitForEnter();
+            }
+        
 
         if (options.visualize && !options.step) {
             CacheVisualizer::print(cache);

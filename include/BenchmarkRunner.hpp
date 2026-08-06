@@ -2,6 +2,7 @@
 #define BENCHMARK_RUNNER_HPP
 
 #include "ReplacementPolicy.hpp"
+#include "MemoryAccess.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -21,7 +22,7 @@ struct BenchmarkResult {
 class BenchmarkRunner {
 public:
     static std::vector<BenchmarkResult> run(
-        const std::vector<std::uint64_t>& addresses,
+        const std::vector<MemoryAccess>& accesses,
         std::size_t cacheSize,
         std::size_t blockSize
     );
@@ -37,7 +38,7 @@ public:
 
 private:
     static BenchmarkResult runConfiguration(
-        const std::vector<std::uint64_t>& addresses,
+        const std::vector<MemoryAccess>& accesses,
         std::size_t cacheSize,
         std::size_t blockSize,
         std::size_t associativity,

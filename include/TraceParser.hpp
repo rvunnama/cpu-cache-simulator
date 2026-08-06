@@ -1,18 +1,19 @@
 #ifndef TRACE_PARSER_HPP
 #define TRACE_PARSER_HPP
 
-#include <cstdint>
+#include "MemoryAccess.hpp"
+
 #include <string>
 #include <vector>
 
 class TraceParser {
 public:
-    static std::vector<std::uint64_t> parseFile(
+    static std::vector<MemoryAccess> parseFile(
         const std::string& filePath
     );
 
 private:
-    static std::uint64_t parseAddress(
+    static MemoryAccess parseLine(
         const std::string& text
     );
 };
