@@ -34,6 +34,12 @@ public:
         double memoryPenalty
     ) const;
 
+    double calculateAverageAccessCost(
+        double cacheAccessTime,
+        double memoryReadPenalty,
+        double memoryWritePenalty
+    ) const;
+
 private:
     std::size_t hits_ = 0;
     std::size_t misses_ = 0;

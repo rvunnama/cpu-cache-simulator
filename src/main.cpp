@@ -41,7 +41,8 @@ struct ProgramOptions {
     bool benchmark = false;
 
     double cacheAccessTime = 1.0;
-    double memoryPenalty = 100.0;
+    double memoryReadPenalty = 100.0;
+    double memoryWritePenalty = 100.0;
 };
 
 void printUsage(const std::string& programName) {
@@ -72,7 +73,10 @@ void printUsage(const std::string& programName) {
         << "  --write-miss-policy <policy>"
         << " write-allocate or no-write-allocate\n"
         << "  --cache-latency <ns>  Cache access time in nanoseconds\n"
-        << "  --memory-penalty <ns> Additional latency for a cache miss\n"
+        << "  --memory-read-penalty <ns>"
+        << " Main-memory read cost\n"
+        << "  --memory-write-penalty <ns>"
+        << " Main-memory write cost\n"
         << "  --help                 Show this help message\n\n"
         << "Example:\n"
         << "  " << programName
@@ -366,17 +370,32 @@ ProgramOptions parseArguments(int argc, char* argv[]) {
                     "--cache-latency"
                 );
 
-        } else if (argument == "--memory-penalty") {
+        } else if (argument == "--memory-read-penalty") {
             if (index + 1 >= argc) {
                 throw std::invalid_argument(
-                    "Missing value after --memory-penalty."
+                    "Missing value after "
+                    "--memory-read-penalty."
                 );
             }
 
-            options.memoryPenalty =
+            options.memoryReadPenalty =
                 parsePositiveDouble(
                     argv[++index],
-                    "--memory-penalty"
+                    "--memory-read-penalty"
+                );
+
+        } else if (argument == "--memory-write-penalty") {
+            if (index + 1 >= argc) {
+                throw std::invalid_argument(
+                    "Missing value after "
+                    "--memory-write-penalty."
+                );
+            }
+
+            options.memoryWritePenalty =
+                parsePositiveDouble(
+                    argv[++index],
+                    "--memory-write-penalty"
                 );
 
         } else {
@@ -420,7 +439,8 @@ int main(int argc, char* argv[]) {
                     options.cacheSize,
                     options.blockSize,
                     options.cacheAccessTime,
-                    options.memoryPenalty
+                    options.memoryReadPenalty,
+                    options.memoryWritePenalty
                 );
 
             BenchmarkRunner::printResults(results);
@@ -507,26 +527,47 @@ int main(int argc, char* argv[]) {
         const CacheStatistics& statistics =
             cache.getStatistics();
 
+        const double traditionalAmat =
+            statistics.calculateAmat(
+                options.cacheAccessTime,
+                options.memoryReadPenalty
+            );
+
+        const double averageAccessCost =
+            statistics.calculateAverageAccessCost(
+                options.cacheAccessTime,
+                options.memoryReadPenalty,
+                options.memoryWritePenalty
+            );
+
         const double amat =
             statistics.calculateAmat(
                 options.cacheAccessTime,
-                options.memoryPenalty
+                options.memoryReadPenalty
             );
 
         std::cout << std::fixed
-                << std::setprecision(2);
+                  << std::setprecision(2);
 
         std::cout << "Cache latency: "
-                << options.cacheAccessTime
-                << " ns\n";
+                  << options.cacheAccessTime
+                  << " ns\n";
 
-        std::cout << "Memory penalty: "
-                << options.memoryPenalty
-                << " ns\n";
+        std::cout << "Memory-read penalty: "
+                  << options.memoryReadPenalty
+                  << " ns\n";
 
-        std::cout << "Estimated AMAT: "
-                << amat
-                << " ns\n";
+        std::cout << "Memory-write penalty: "
+                  << options.memoryWritePenalty
+                  << " ns\n";
+
+        std::cout << "Traditional AMAT estimate: "
+                  << traditionalAmat
+                  << " ns\n";
+
+        std::cout << "Traffic-adjusted access cost: "
+                  << averageAccessCost
+                  << " ns\n";
 
     } catch (const std::exception& error) {
         std::cerr << "Error: "

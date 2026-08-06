@@ -16,7 +16,8 @@ std::vector<BenchmarkResult> BenchmarkRunner::run(
     std::size_t cacheSize,
     std::size_t blockSize,
     double cacheAccessTime,
-    double memoryPenalty
+    double memoryReadPenalty,
+    double memoryWritePenalty
 ) {
     const std::size_t totalLines =
         cacheSize / blockSize;
@@ -79,7 +80,8 @@ std::vector<BenchmarkResult> BenchmarkRunner::run(
                             writePolicy,
                             writeMissPolicy,
                             cacheAccessTime,
-                            memoryPenalty
+                            memoryReadPenalty,
+                            memoryWritePenalty
                         )
                     );
                 }
@@ -92,7 +94,8 @@ std::vector<BenchmarkResult> BenchmarkRunner::run(
         results.end(),
         [](const BenchmarkResult& first,
         const BenchmarkResult& second) {
-            return first.amat < second.amat;
+            return first.averageAccessCost <
+                second.averageAccessCost;
         }
     );
 
@@ -108,7 +111,8 @@ BenchmarkResult BenchmarkRunner::runConfiguration(
     WritePolicy writePolicy,
     WriteMissPolicy writeMissPolicy,
     double cacheAccessTime,
-    double memoryPenalty
+    double memoryReadPenalty,
+    double memoryWritePenalty
 ) {
     SetAssociativeCache cache(
         cacheSize,
@@ -139,10 +143,17 @@ BenchmarkResult BenchmarkRunner::runConfiguration(
         statistics.getMemoryWrites(),
         statistics.getDirtyEvictions(),
         statistics.getHitRate(),
+        
         statistics.calculateAmat(
             cacheAccessTime,
-            memoryPenalty
+            memoryReadPenalty
+        ),
+        statistics.calculateAverageAccessCost(
+            cacheAccessTime,
+            memoryReadPenalty,
+            memoryWritePenalty
         )
+
     };
 }
 
@@ -161,6 +172,7 @@ void BenchmarkRunner::printResults(
     constexpr int dirtyEvictionsWidth = 14;
     constexpr int hitRateWidth = 12;
     constexpr int amatWidth = 12;
+    constexpr int accessCostWidth = 16;
 
     const int tableWidth =
         rankWidth +
@@ -174,7 +186,8 @@ void BenchmarkRunner::printResults(
         memoryWritesWidth +
         dirtyEvictionsWidth +
         hitRateWidth +
-        amatWidth;
+        amatWidth +
+        accessCostWidth;
 
     const std::string separator(
         static_cast<std::size_t>(tableWidth),
@@ -198,6 +211,7 @@ void BenchmarkRunner::printResults(
         << std::setw(dirtyEvictionsWidth) << "Dirty Evict."
         << std::setw(hitRateWidth) << "Hit Rate %"
         << std::setw(amatWidth) << "AMAT (ns)"
+        << std::setw(accessCostWidth) << "Avg Cost (ns)"
         << '\n';
 
     std::cout << separator << '\n';
@@ -255,6 +269,9 @@ void BenchmarkRunner::printResults(
 
             << std::setw(amatWidth)
             << result.amat
+
+            << std::setw(accessCostWidth)
+            << result.averageAccessCost
 
             << '\n';
     }
@@ -326,7 +343,8 @@ void BenchmarkRunner::exportCsv(
         << "MemoryWrites,"
         << "DirtyEvictions,"
         << "HitRate,"
-        << "AMAT\n";
+        << "AMAT,"
+        << "AverageAccessCost\n";
 
     for (const BenchmarkResult& result : results) {
         outputFile
@@ -351,6 +369,7 @@ void BenchmarkRunner::exportCsv(
             << std::setprecision(2)
             << result.hitRate << ','
             << result.amat
+            << result.averageAccessCost
             << '\n';
     }
 }

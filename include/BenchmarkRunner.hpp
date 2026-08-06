@@ -27,6 +27,7 @@ struct BenchmarkResult {
 
     double hitRate;
     double amat;
+    double averageAccessCost;
 };
 
 class BenchmarkRunner {
@@ -36,7 +37,8 @@ public:
         std::size_t cacheSize,
         std::size_t blockSize,
         double cacheAccessTime,
-        double memoryPenalty
+        double memoryReadPenalty,
+        double memoryWritePenalty
     );
 
     static void printResults(
@@ -58,7 +60,8 @@ private:
         WritePolicy writePolicy,
         WriteMissPolicy writeMissPolicy,
         double cacheAccessTime,
-        double memoryPenalty
+        double memoryReadPenalty,
+        double memoryWritePenalty
     );
 
     static const char* replacementPolicyToString(

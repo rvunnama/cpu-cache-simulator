@@ -385,6 +385,50 @@ void testAmatCalculation() {
     std::cout << "PASS: AMAT calculation\n";
 }
 
+void testAverageAccessCost() {
+    SetAssociativeCache cache(
+        64,
+        16,
+        2,
+        ReplacementPolicy::LRU,
+        WritePolicy::WriteThrough,
+        WriteMissPolicy::WriteAllocate
+    );
+
+    cache.access({
+        AccessType::Write,
+        0x0000
+    });
+
+    cache.access({
+        AccessType::Read,
+        0x0000
+    });
+
+    const CacheStatistics& statistics =
+        cache.getStatistics();
+
+    const double cost =
+        statistics.calculateAverageAccessCost(
+            1.0,
+            100.0,
+            50.0
+        );
+
+    // One memory read and one memory write
+    // across two CPU accesses:
+    // 1 + (100 + 50) / 2 = 76
+    assert(
+        approximatelyEqual(
+            cost,
+            76.0
+        )
+    );
+
+    std::cout
+        << "PASS: average access cost\n";
+}
+
 }  // namespace
 
 int main() {
@@ -400,6 +444,7 @@ int main() {
     testWriteAllocateLoadsBlock();
     testNoWriteAllocateBypassesCache();
     testAmatCalculation();
+    testAverageAccessCost();
 
     std::cout << "\nAll cache tests passed.\n";
 

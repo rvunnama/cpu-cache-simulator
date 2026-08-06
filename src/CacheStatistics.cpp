@@ -82,6 +82,29 @@ double CacheStatistics::calculateAmat(
            missRateFraction * memoryPenalty;
 }
 
+double CacheStatistics::calculateAverageAccessCost(
+    double cacheAccessTime,
+    double memoryReadPenalty,
+    double memoryWritePenalty
+) const {
+    const std::size_t totalAccesses =
+        getTotalAccesses();
+
+    if (totalAccesses == 0) {
+        return 0.0;
+    }
+
+    const double totalMemoryCost =
+        static_cast<double>(memoryReads_) *
+            memoryReadPenalty +
+        static_cast<double>(memoryWrites_) *
+            memoryWritePenalty;
+
+    return cacheAccessTime +
+           totalMemoryCost /
+               static_cast<double>(totalAccesses);
+}
+
 void CacheStatistics::printReport() const {
     std::cout << "\nStatistics\n";
     std::cout << "----------\n";
