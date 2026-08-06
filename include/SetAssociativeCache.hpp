@@ -7,6 +7,7 @@
 #include "MemoryAccess.hpp"
 #include "WritePolicy.hpp"
 #include "WriteMissPolicy.hpp"
+#include "MissClassifier.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -48,6 +49,8 @@ private:
     CacheStatistics statistics_;
 
     std::size_t accessCounter_ = 0;
+
+    MissClassifier missClassifier_;
 
     std::uint64_t calculateBlockAddress(
         std::uint64_t address

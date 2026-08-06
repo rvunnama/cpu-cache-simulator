@@ -21,6 +21,7 @@ add_library(
     src/CacheStatistics.cpp
     src/CacheSet.cpp
     src/SetAssociativeCache.cpp
+    src/MissClassifier.cpp
 )
 
 target_include_directories(

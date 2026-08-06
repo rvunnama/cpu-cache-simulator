@@ -530,6 +530,157 @@ void testDirtyBitClearedAfterReplacement() {
         << "PASS: dirty bit cleared after replacement\n";
 }
 
+void testCompulsoryMisses() {
+    SetAssociativeCache cache(
+        64,
+        16,
+        2,
+        ReplacementPolicy::LRU,
+        WritePolicy::WriteThrough,
+        WriteMissPolicy::WriteAllocate
+    );
+
+    runTrace(cache, {
+        0x0000,
+        0x0010,
+        0x0000
+    });
+
+    const CacheStatistics& statistics =
+        cache.getStatistics();
+
+    assert(
+        statistics.getCompulsoryMisses() == 2
+    );
+
+    assert(
+        statistics.getConflictMisses() == 0
+    );
+
+    assert(
+        statistics.getCapacityMisses() == 0
+    );
+
+    std::cout
+        << "PASS: compulsory misses classified\n";
+}
+
+void testConflictMissClassification() {
+    SetAssociativeCache cache(
+        64,
+        16,
+        1,
+        ReplacementPolicy::LRU,
+        WritePolicy::WriteThrough,
+        WriteMissPolicy::WriteAllocate
+    );
+
+    runTrace(cache, {
+        0x0000,
+        0x0040,
+        0x0000
+    });
+
+    const CacheStatistics& statistics =
+        cache.getStatistics();
+
+    assert(
+        statistics.getCompulsoryMisses() == 2
+    );
+
+    assert(
+        statistics.getConflictMisses() == 1
+    );
+
+    assert(
+        statistics.getCapacityMisses() == 0
+    );
+
+    std::cout
+        << "PASS: conflict miss classified\n";
+}
+
+void testCapacityMissClassification() {
+    SetAssociativeCache cache(
+        32,
+        16,
+        2,
+        ReplacementPolicy::LRU,
+        WritePolicy::WriteThrough,
+        WriteMissPolicy::WriteAllocate
+    );
+
+    runTrace(cache, {
+        0x0000,
+        0x0010,
+        0x0020,
+        0x0000
+    });
+
+    const CacheStatistics& statistics =
+        cache.getStatistics();
+
+    assert(
+        statistics.getCompulsoryMisses() == 3
+    );
+
+    assert(
+        statistics.getCapacityMisses() == 1
+    );
+
+    std::cout
+        << "PASS: capacity miss classified\n";
+}
+
+void testBypassMissClassification() {
+    SetAssociativeCache cache(
+        64,
+        16,
+        2,
+        ReplacementPolicy::LRU,
+        WritePolicy::WriteThrough,
+        WriteMissPolicy::NoWriteAllocate
+    );
+
+    cache.access({
+        AccessType::Write,
+        0x0000
+    });
+
+    const CacheStatistics& statistics =
+        cache.getStatistics();
+
+    assert(statistics.getBypassMisses() == 1);
+
+    std::cout
+        << "PASS: bypass miss classified\n";
+}
+
+void testTotalClassifiedMisses() {
+    SetAssociativeCache cache(
+        64,
+        16,
+        2,
+        ReplacementPolicy::LRU,
+        WritePolicy::WriteThrough,
+        WriteMissPolicy::NoWriteAllocate
+    );
+
+    const CacheStatistics& statistics =
+        cache.getStatistics();
+
+    const std::size_t classifiedMisses =
+    statistics.getCompulsoryMisses() +
+    statistics.getConflictMisses() +
+    statistics.getCapacityMisses() +
+    statistics.getBypassMisses();
+
+    assert(
+        classifiedMisses ==
+        statistics.getMisses()
+    );
+}
+
 }  // namespace
 
 int main() {
@@ -549,6 +700,11 @@ int main() {
     testInvalidWritePolicyCombination();
     testEmptyStatistics();
     testDirtyBitClearedAfterReplacement();
+    testCompulsoryMisses();
+    testConflictMissClassification();
+    testCapacityMissClassification();
+    testBypassMissClassification();
+    testTotalClassifiedMisses();
 
     std::cout << "\nAll cache tests passed.\n";
 

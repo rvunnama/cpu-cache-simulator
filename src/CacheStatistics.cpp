@@ -105,6 +105,51 @@ double CacheStatistics::calculateAverageAccessCost(
                static_cast<double>(totalAccesses);
 }
 
+void CacheStatistics::recordMissType(
+    MissType type
+) {
+    switch (type) {
+        case MissType::Compulsory:
+            ++compulsoryMisses_;
+            break;
+
+        case MissType::Conflict:
+            ++conflictMisses_;
+            break;
+
+        case MissType::Capacity:
+            ++capacityMisses_;
+            break;
+
+        case MissType::Bypass:
+            ++bypassMisses_;
+            break;
+
+        case MissType::None:
+            break;
+    }
+}
+
+std::size_t
+CacheStatistics::getCompulsoryMisses() const {
+    return compulsoryMisses_;
+}
+
+std::size_t
+CacheStatistics::getConflictMisses() const {
+    return conflictMisses_;
+}
+
+std::size_t
+CacheStatistics::getCapacityMisses() const {
+    return capacityMisses_;
+}
+
+std::size_t
+CacheStatistics::getBypassMisses() const {
+    return bypassMisses_;
+}
+
 void CacheStatistics::printReport() const {
     std::cout << "\nStatistics\n";
     std::cout << "----------\n";
@@ -129,5 +174,21 @@ void CacheStatistics::printReport() const {
     std::cout
         << "Dirty evictions: "
         << dirtyEvictions_
+        << '\n';
+
+    std::cout << "Compulsory misses: "
+        << getCompulsoryMisses()
+        << '\n';
+
+    std::cout << "Conflict misses: "
+        << getConflictMisses()
+        << '\n';
+
+    std::cout << "Capacity misses: "
+        << getCapacityMisses()
+        << '\n';
+
+    std::cout << "Bypass misses: "
+        << getBypassMisses()
         << '\n';
 }

@@ -84,7 +84,8 @@ SetAssociativeCache::SetAssociativeCache(
       replacementPolicy_(replacementPolicy),
       writePolicy_(writePolicy),
       writeMissPolicy_(writeMissPolicy),
-      sets_() {
+      sets_(), 
+      missClassifier_(numberOfLines_) {
 
     sets_.reserve(numberOfSets_);
 
@@ -133,16 +134,34 @@ bool SetAssociativeCache::access(
             }
 
             statistics_.recordHit();
+
+            missClassifier_.observeAccess(
+                blockAddress,
+                false,
+                false
+            );
+
             return true;
         }
     }
 
     statistics_.recordMiss();
 
-    if (
+    const bool bypassedCache =
         access.type == AccessType::Write &&
-        writeMissPolicy_ == WriteMissPolicy::NoWriteAllocate
-    ) {
+        writeMissPolicy_ ==
+            WriteMissPolicy::NoWriteAllocate;
+
+    const MissType missType =
+        missClassifier_.observeAccess(
+            blockAddress,
+            true,
+            bypassedCache
+        );
+
+    statistics_.recordMissType(missType);
+
+    if (bypassedCache) {
         statistics_.recordMemoryWrite();
         return false;
     }
