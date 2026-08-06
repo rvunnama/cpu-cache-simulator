@@ -2,6 +2,7 @@
 
 #include "CacheStatistics.hpp"
 #include "SetAssociativeCache.hpp"
+#include "WriteMissPolicy.hpp"
 
 #include <iomanip>
 #include <iostream>
@@ -66,7 +67,8 @@ BenchmarkResult BenchmarkRunner::runConfiguration(
         blockSize,
         associativity,
         policy,
-        WritePolicy::WriteThrough
+        WritePolicy::WriteThrough,
+        WriteMissPolicy::WriteAllocate
     );
 
     for (const MemoryAccess& access : accesses) {

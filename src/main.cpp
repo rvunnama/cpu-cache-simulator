@@ -5,6 +5,7 @@
 #include "BenchmarkRunner.hpp"
 #include "MemoryAccess.hpp"
 #include "WritePolicy.hpp"
+#include "WriteMissPolicy.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -31,6 +32,9 @@ struct ProgramOptions {
     WritePolicy writePolicy =
         WritePolicy::WriteThrough;
 
+    WriteMissPolicy writeMissPolicy =
+        WriteMissPolicy::WriteAllocate;
+
     bool verbose = false;
     bool visualize = false;
     bool step = false;
@@ -47,6 +51,7 @@ void printUsage(const std::string& programName) {
         << " --replacement <policy>"
         << " --trace <file>"
         << " --write-policy <policy>"
+        << "  --write-miss-policy <policy>"
         << " [--verbose]\n\n"
         << "[--benchmark]\n\n"
         << "Options:\n"
@@ -61,6 +66,8 @@ void printUsage(const std::string& programName) {
         << "  --benchmark           Compare cache configurations\n"
         << "  --csv <file>          Export benchmark results to CSV\n"
         << "  --write-policy <policy> write-through or write-back\n"
+        << "  --write-miss-policy <policy>"
+        << " write-allocate or no-write-allocate\n"
         << "  --help                 Show this help message\n\n"
         << "Example:\n"
         << "  " << programName
@@ -133,6 +140,23 @@ WritePolicy parseWritePolicy(
     );
 }
 
+WriteMissPolicy parseWriteMissPolicy(
+    const std::string& text
+) {
+    if (text == "write-allocate") {
+        return WriteMissPolicy::WriteAllocate;
+    }
+
+    if (text == "no-write-allocate") {
+        return WriteMissPolicy::NoWriteAllocate;
+    }
+
+    throw std::invalid_argument(
+        "Unsupported write-miss policy: " + text +
+        ". Supported policies: write-allocate, "
+        "no-write-allocate."
+    );
+}
 
 std::string replacementPolicyToString(
     ReplacementPolicy policy
@@ -157,6 +181,20 @@ std::string writePolicyToString(
 
         case WritePolicy::WriteBack:
             return "Write-back";
+    }
+
+    return "Unknown";
+}
+
+std::string writeMissPolicyToString(
+    WriteMissPolicy policy
+) {
+    switch (policy) {
+        case WriteMissPolicy::WriteAllocate:
+            return "Write-allocate";
+
+        case WriteMissPolicy::NoWriteAllocate:
+            return "No-write-allocate";
     }
 
     return "Unknown";
@@ -268,6 +306,16 @@ ProgramOptions parseArguments(int argc, char* argv[]) {
             options.writePolicy =
                 parseWritePolicy(argv[++index]);
 
+        } else if (argument == "--write-miss-policy") {
+            if (index + 1 >= argc) {
+                throw std::invalid_argument(
+                    "Missing value after --write-miss-policy."
+                );
+            }
+
+            options.writeMissPolicy =
+                parseWriteMissPolicy(argv[++index]);
+
         } else {
             throw std::invalid_argument(
                 "Unknown option: " + argument
@@ -295,7 +343,8 @@ int main(int argc, char* argv[]) {
             options.blockSize,
             options.associativity,
             options.replacementPolicy,
-            options.writePolicy
+            options.writePolicy,
+            options.writeMissPolicy
         );
           
         const std::vector<MemoryAccess> accesses =
@@ -343,13 +392,18 @@ int main(int argc, char* argv[]) {
                   << "-way\n";
         std::cout << "Replacement policy: "
                   << replacementPolicyToString(
-                    options.replacementPolicy
-                    )
+                          options.replacementPolicy
+                      )
                   << '\n';
         std::cout << "Write policy: "
                   << writePolicyToString(
-                    options.writePolicy
-                    )
+                          options.writePolicy
+                      )
+                  << '\n';
+        std::cout << "Write-miss policy: "
+                  << writeMissPolicyToString(
+                          options.writeMissPolicy
+                      )
                   << '\n';
         
 

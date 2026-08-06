@@ -54,7 +54,8 @@ SetAssociativeCache::SetAssociativeCache(
     std::size_t blockSize,
     std::size_t associativity,
     ReplacementPolicy replacementPolicy,
-    WritePolicy writePolicy
+    WritePolicy writePolicy,
+    WriteMissPolicy writeMissPolicy
 )
     : cacheSize_(cacheSize),
       blockSize_(blockSize),
@@ -69,6 +70,7 @@ SetAssociativeCache::SetAssociativeCache(
       numberOfSets_(numberOfLines_ / associativity_),
       replacementPolicy_(replacementPolicy),
       writePolicy_(writePolicy),
+      writeMissPolicy_(writeMissPolicy),
       sets_() {
 
     sets_.reserve(numberOfSets_);
@@ -123,6 +125,15 @@ bool SetAssociativeCache::access(
     }
 
     statistics_.recordMiss();
+
+    if (
+        access.type == AccessType::Write &&
+        writeMissPolicy_ == WriteMissPolicy::NoWriteAllocate
+    ) {
+        statistics_.recordMemoryWrite();
+        return false;
+    }
+
     statistics_.recordMemoryRead();
 
     CacheLine& insertionLine =

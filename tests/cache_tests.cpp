@@ -1,6 +1,7 @@
 #include "ReplacementPolicy.hpp"
 #include "SetAssociativeCache.hpp"
 #include "WritePolicy.hpp"
+#include "WriteMissPolicy.hpp"
 
 #include <cassert>
 #include <cmath>
@@ -38,7 +39,8 @@ void testDirectMappedConflictMisses() {
         16,
         1,
         ReplacementPolicy::FIFO,
-        WritePolicy::WriteThrough
+        WritePolicy::WriteThrough,
+        WriteMissPolicy::WriteAllocate
     );
 
     runTrace(cache, {
@@ -65,7 +67,8 @@ void testTwoWayAssociativityReducesConflicts() {
         16,
         2,
         ReplacementPolicy::FIFO,
-        WritePolicy::WriteThrough
+        WritePolicy::WriteThrough,
+        WriteMissPolicy::WriteAllocate
     );
 
     runTrace(cache, {
@@ -91,7 +94,8 @@ void testFifoReplacement() {
         16,
         2,
         ReplacementPolicy::FIFO,
-        WritePolicy::WriteThrough
+        WritePolicy::WriteThrough,
+        WriteMissPolicy::WriteAllocate
     );
 
     runTrace(cache, {
@@ -119,7 +123,8 @@ void testLruReplacement() {
         16,
         2,
         ReplacementPolicy::LRU,
-        WritePolicy::WriteThrough
+        WritePolicy::WriteThrough,
+        WriteMissPolicy::WriteAllocate
     );
 
     runTrace(cache, {
@@ -147,7 +152,8 @@ void testStatisticsRates() {
         16,
         2,
         ReplacementPolicy::FIFO,
-        WritePolicy::WriteThrough
+        WritePolicy::WriteThrough,
+        WriteMissPolicy::WriteAllocate
     );
 
     runTrace(cache, {
@@ -187,7 +193,8 @@ void testInvalidConfiguration() {
             16,
             3,
             ReplacementPolicy::FIFO,
-            WritePolicy::WriteThrough
+            WritePolicy::WriteThrough,
+            WriteMissPolicy::WriteAllocate
         );
     } catch (const std::invalid_argument&) {
         exceptionThrown = true;
@@ -205,7 +212,8 @@ void testWriteBackMarksLineDirty() {
         16,
         2,
         ReplacementPolicy::LRU,
-        WritePolicy::WriteBack
+        WritePolicy::WriteBack,
+        WriteMissPolicy::WriteAllocate
     );
 
     cache.access({
@@ -228,7 +236,8 @@ void testWriteThroughMemoryTraffic() {
         16,
         2,
         ReplacementPolicy::LRU,
-        WritePolicy::WriteThrough
+        WritePolicy::WriteThrough,
+        WriteMissPolicy::WriteAllocate
     );
 
     cache.access({
@@ -258,7 +267,8 @@ void testWriteBackDirtyEviction() {
         16,
         1,
         ReplacementPolicy::FIFO,
-        WritePolicy::WriteBack
+        WritePolicy::WriteBack,
+        WriteMissPolicy::WriteAllocate
     );
 
     cache.access({
@@ -282,6 +292,63 @@ void testWriteBackDirtyEviction() {
         << "PASS: write-back dirty eviction\n";
 }
 
+void testWriteAllocateLoadsBlock() {
+    SetAssociativeCache cache(
+        64,
+        16,
+        2,
+        ReplacementPolicy::LRU,
+        WritePolicy::WriteThrough,
+        WriteMissPolicy::WriteAllocate
+    );
+
+    cache.access({
+        AccessType::Write,
+        0x0000
+    });
+
+    const bool secondAccessHit = cache.access({
+        AccessType::Read,
+        0x0000
+    });
+
+    assert(secondAccessHit);
+
+    std::cout
+        << "PASS: write-allocate loads block\n";
+}
+
+void testNoWriteAllocateBypassesCache() {
+    SetAssociativeCache cache(
+        64,
+        16,
+        2,
+        ReplacementPolicy::LRU,
+        WritePolicy::WriteThrough,
+        WriteMissPolicy::NoWriteAllocate
+    );
+
+    cache.access({
+        AccessType::Write,
+        0x0000
+    });
+
+    const bool secondAccessHit = cache.access({
+        AccessType::Read,
+        0x0000
+    });
+
+    const CacheStatistics& statistics =
+        cache.getStatistics();
+
+    assert(!secondAccessHit);
+    assert(statistics.getMemoryWrites() == 1);
+    assert(statistics.getMemoryReads() == 1);
+
+    std::cout
+        << "PASS: no-write-allocate bypasses cache\n";
+}
+
 }  // namespace
 
 int main() {
@@ -294,6 +361,8 @@ int main() {
     testWriteBackMarksLineDirty();
     testWriteThroughMemoryTraffic();
     testWriteBackDirtyEviction();
+    testWriteAllocateLoadsBlock();
+    testNoWriteAllocateBypassesCache();
 
     std::cout << "\nAll cache tests passed.\n";
 

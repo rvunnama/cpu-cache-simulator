@@ -6,6 +6,7 @@
 #include "ReplacementPolicy.hpp"
 #include "MemoryAccess.hpp"
 #include "WritePolicy.hpp"
+#include "WriteMissPolicy.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -18,7 +19,8 @@ public:
         std::size_t blockSize,
         std::size_t associativity,
         ReplacementPolicy replacementPolicy,
-        WritePolicy writePolicy
+        WritePolicy writePolicy,
+        WriteMissPolicy writeMissPolicy
     );
 
     bool access(const MemoryAccess& access);
@@ -39,6 +41,8 @@ private:
     ReplacementPolicy replacementPolicy_;
 
     WritePolicy writePolicy_;
+
+    WriteMissPolicy writeMissPolicy_;
 
     std::vector<CacheSet> sets_;
     CacheStatistics statistics_;
