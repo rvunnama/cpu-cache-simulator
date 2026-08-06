@@ -10,6 +10,7 @@
 #include <vector>
 #include <algorithm>
 #include <string>
+#include <stdexcept>
 
 std::vector<BenchmarkResult> BenchmarkRunner::run(
     const std::vector<MemoryAccess>& accesses,
@@ -137,6 +138,19 @@ BenchmarkResult BenchmarkRunner::runConfiguration(
     const CacheStatistics& statistics =
         cache.getStatistics();
 
+    const std::size_t classifiedMisses =
+        statistics.getCompulsoryMisses() +
+        statistics.getConflictMisses() +
+        statistics.getCapacityMisses() +
+        statistics.getBypassMisses();
+
+    if (classifiedMisses != statistics.getMisses()) {
+        throw std::logic_error(
+            "Miss classification totals do not match "
+            "the total miss count."
+        );
+    }
+
     return {
         cacheSize,
         blockSize,
@@ -149,6 +163,10 @@ BenchmarkResult BenchmarkRunner::runConfiguration(
         statistics.getMemoryReads(),
         statistics.getMemoryWrites(),
         statistics.getDirtyEvictions(),
+        statistics.getCompulsoryMisses(),
+        statistics.getConflictMisses(),
+        statistics.getCapacityMisses(),
+        statistics.getBypassMisses(),
         statistics.getHitRate(),
         
         statistics.calculateAmat(
@@ -180,6 +198,10 @@ void BenchmarkRunner::printResults(
     constexpr int hitRateWidth = 12;
     constexpr int amatWidth = 12;
     constexpr int accessCostWidth = 16;
+    constexpr int compulsoryWidth = 8;
+    constexpr int conflictWidth = 8;
+    constexpr int capacityWidth = 8;
+    constexpr int bypassWidth = 8;
 
     const int tableWidth =
         rankWidth +
@@ -194,7 +216,11 @@ void BenchmarkRunner::printResults(
         dirtyEvictionsWidth +
         hitRateWidth +
         amatWidth +
-        accessCostWidth;
+        accessCostWidth +
+        compulsoryWidth +
+        conflictWidth +
+        capacityWidth +
+        bypassWidth;
 
     const std::string separator(
         static_cast<std::size_t>(tableWidth),
@@ -213,6 +239,10 @@ void BenchmarkRunner::printResults(
         << std::setw(writeMissPolicyWidth) << "Write-Miss Policy"
         << std::setw(hitsWidth) << "Hits"
         << std::setw(missesWidth) << "Misses"
+        << std::setw(compulsoryWidth) << "Comp."
+        << std::setw(conflictWidth) << "Conf."
+        << std::setw(capacityWidth) << "Cap."
+        << std::setw(bypassWidth) << "Bypass"
         << std::setw(memoryReadsWidth) << "Mem Reads"
         << std::setw(memoryWritesWidth) << "Mem Writes"
         << std::setw(dirtyEvictionsWidth) << "Dirty Evict."
@@ -258,6 +288,18 @@ void BenchmarkRunner::printResults(
 
             << std::setw(missesWidth)
             << result.misses
+
+            << std::setw(compulsoryWidth)
+            << result.compulsoryMisses
+
+            << std::setw(conflictWidth)
+            << result.conflictMisses
+
+            << std::setw(capacityWidth)
+            << result.capacityMisses
+
+            << std::setw(bypassWidth)
+            << result.bypassMisses
 
             << std::setw(memoryReadsWidth)
             << result.memoryReads
@@ -346,6 +388,10 @@ void BenchmarkRunner::exportCsv(
         << "WriteMissPolicy,"
         << "Hits,"
         << "Misses,"
+        << "CompulsoryMisses,"
+        << "ConflictMisses,"
+        << "CapacityMisses,"
+        << "BypassMisses,"
         << "MemoryReads,"
         << "MemoryWrites,"
         << "DirtyEvictions,"
@@ -359,25 +405,30 @@ void BenchmarkRunner::exportCsv(
             << result.blockSize << ','
             << result.associativity << ','
             << replacementPolicyToString(
-                   result.replacementPolicy
-               ) << ','
+                result.replacementPolicy
+            ) << ','
             << writePolicyToString(
-                   result.writePolicy
-               ) << ','
+                result.writePolicy
+            ) << ','
             << writeMissPolicyToString(
-                   result.writeMissPolicy
-               ) << ','
+                result.writeMissPolicy
+            ) << ','
             << result.hits << ','
             << result.misses << ','
+            << result.compulsoryMisses << ','
+            << result.conflictMisses << ','
+            << result.capacityMisses << ','
+            << result.bypassMisses << ','
             << result.memoryReads << ','
             << result.memoryWrites << ','
             << result.dirtyEvictions << ','
             << std::fixed
             << std::setprecision(2)
             << result.hitRate << ','
-            << result.amat
+            << result.amat << ','
             << result.averageAccessCost
             << '\n';
+
     }
 }
 
