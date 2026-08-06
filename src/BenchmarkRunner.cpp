@@ -8,6 +8,8 @@
 #include <iostream>
 #include <stdexcept>
 #include <vector>
+#include <algorithm>
+#include <string>
 
 std::vector<BenchmarkResult> BenchmarkRunner::run(
     const std::vector<MemoryAccess>& accesses,
@@ -85,6 +87,15 @@ std::vector<BenchmarkResult> BenchmarkRunner::run(
         }
     }
 
+    std::sort(
+        results.begin(),
+        results.end(),
+        [](const BenchmarkResult& first,
+        const BenchmarkResult& second) {
+            return first.amat < second.amat;
+        }
+    );
+
     return results;
 }
 
@@ -138,58 +149,155 @@ BenchmarkResult BenchmarkRunner::runConfiguration(
 void BenchmarkRunner::printResults(
     const std::vector<BenchmarkResult>& results
 ) {
-    std::cout << "\nBenchmark Results\n";
+    constexpr int rankWidth = 6;
+    constexpr int associativityWidth = 8;
+    constexpr int replacementWidth = 8;
+    constexpr int writePolicyWidth = 16;
+    constexpr int writeMissPolicyWidth = 20;
+    constexpr int hitsWidth = 8;
+    constexpr int missesWidth = 8;
+    constexpr int memoryReadsWidth = 12;
+    constexpr int memoryWritesWidth = 12;
+    constexpr int dirtyEvictionsWidth = 14;
+    constexpr int hitRateWidth = 12;
+    constexpr int amatWidth = 12;
 
-    std::cout
-        << "------------------------------------------------"
-        << "------------------------------------------------"
-        << "--------------------------\n";
+    const int tableWidth =
+        rankWidth +
+        associativityWidth +
+        replacementWidth +
+        writePolicyWidth +
+        writeMissPolicyWidth +
+        hitsWidth +
+        missesWidth +
+        memoryReadsWidth +
+        memoryWritesWidth +
+        dirtyEvictionsWidth +
+        hitRateWidth +
+        amatWidth;
+
+    const std::string separator(
+        static_cast<std::size_t>(tableWidth),
+        '-'
+    );
+
+    std::cout << "\nBenchmark Results\n";
+    std::cout << separator << '\n';
 
     std::cout
         << std::left
-        << std::setw(8)  << "Assoc"
-        << std::setw(8)  << "Repl."
-        << std::setw(16) << "Write"
-        << std::setw(20) << "Write Miss"
-        << std::setw(8)  << "Hits"
-        << std::setw(8)  << "Misses"
-        << std::setw(10) << "Mem Read"
-        << std::setw(10) << "Mem Write"
-        << std::setw(12) << "Dirty Evict"
-        << std::setw(12) << "Hit Rate %"
-        << "AMAT (ns)\n";
+        << std::setw(rankWidth) << "Rank"
+        << std::setw(associativityWidth) << "Assoc."
+        << std::setw(replacementWidth) << "Repl."
+        << std::setw(writePolicyWidth) << "Write Policy"
+        << std::setw(writeMissPolicyWidth) << "Write-Miss Policy"
+        << std::setw(hitsWidth) << "Hits"
+        << std::setw(missesWidth) << "Misses"
+        << std::setw(memoryReadsWidth) << "Mem Reads"
+        << std::setw(memoryWritesWidth) << "Mem Writes"
+        << std::setw(dirtyEvictionsWidth) << "Dirty Evict."
+        << std::setw(hitRateWidth) << "Hit Rate %"
+        << std::setw(amatWidth) << "AMAT (ns)"
+        << '\n';
 
-    std::cout
-        << "------------------------------------------------"
-        << "------------------------------------------------"
-        << "--------------------------\n";
+    std::cout << separator << '\n';
 
-    for (const BenchmarkResult& result : results) {
+    for (
+        std::size_t index = 0;
+        index < results.size();
+        ++index
+    ) {
+        const BenchmarkResult& result = results[index];
+
         std::cout
             << std::left
-            << std::setw(8) << result.associativity
-            << std::setw(8)
+            << std::setw(rankWidth)
+            << (index + 1)
+
+            << std::setw(associativityWidth)
+            << result.associativity
+
+            << std::setw(replacementWidth)
             << replacementPolicyToString(
-                result.replacementPolicy
-            )
-            << std::setw(16)
+                   result.replacementPolicy
+               )
+
+            << std::setw(writePolicyWidth)
             << writePolicyToString(
-                result.writePolicy
-            )
-            << std::setw(20)
+                   result.writePolicy
+               )
+
+            << std::setw(writeMissPolicyWidth)
             << writeMissPolicyToString(
-                result.writeMissPolicy
-            )
-            << std::setw(8) << result.hits
-            << std::setw(8) << result.misses
-            << std::setw(10) << result.memoryReads
-            << std::setw(10) << result.memoryWrites
-            << std::setw(12) << result.dirtyEvictions
+                   result.writeMissPolicy
+               )
+
+            << std::setw(hitsWidth)
+            << result.hits
+
+            << std::setw(missesWidth)
+            << result.misses
+
+            << std::setw(memoryReadsWidth)
+            << result.memoryReads
+
+            << std::setw(memoryWritesWidth)
+            << result.memoryWrites
+
+            << std::setw(dirtyEvictionsWidth)
+            << result.dirtyEvictions
+
             << std::fixed
             << std::setprecision(2)
-            << std::setw(12) << result.hitRate
+
+            << std::setw(hitRateWidth)
+            << result.hitRate
+
+            << std::setw(amatWidth)
             << result.amat
+
             << '\n';
+    }
+
+    std::cout << separator << '\n';
+
+    if (!results.empty()) {
+        const BenchmarkResult& best = results.front();
+
+        std::cout << "\nBest configuration\n";
+        std::cout << "------------------\n";
+
+        std::cout << "Associativity: "
+                  << best.associativity
+                  << "-way\n";
+
+        std::cout << "Replacement policy: "
+                  << replacementPolicyToString(
+                         best.replacementPolicy
+                     )
+                  << '\n';
+
+        std::cout << "Write policy: "
+                  << writePolicyToString(
+                         best.writePolicy
+                     )
+                  << '\n';
+
+        std::cout << "Write-miss policy: "
+                  << writeMissPolicyToString(
+                         best.writeMissPolicy
+                     )
+                  << '\n';
+
+        std::cout << "Hit rate: "
+                  << std::fixed
+                  << std::setprecision(2)
+                  << best.hitRate
+                  << "%\n";
+
+        std::cout << "Estimated AMAT: "
+                  << best.amat
+                  << " ns\n";
     }
 }
 
