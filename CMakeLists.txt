@@ -60,3 +60,20 @@ add_test(
     NAME cache_behavior_tests
     COMMAND cache_tests
 )
+
+add_executable(
+    trace_parser_tests
+    tests/trace_parser_tests.cpp
+    src/TraceParser.cpp
+)
+
+target_include_directories(
+    trace_parser_tests
+    PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+)
+
+add_test(
+    NAME trace_parser_tests
+    COMMAND trace_parser_tests
+)

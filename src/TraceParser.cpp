@@ -1,10 +1,49 @@
 #include "TraceParser.hpp"
 
+#include <algorithm>
+#include <cctype>
 #include <fstream>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
+
+namespace {
+
+std::string trim(const std::string& text) {
+    const auto first = std::find_if_not(
+        text.begin(),
+        text.end(),
+        [](unsigned char character) {
+            return std::isspace(character);
+        }
+    );
+
+    const auto last = std::find_if_not(
+        text.rbegin(),
+        text.rend(),
+        [](unsigned char character) {
+            return std::isspace(character);
+        }
+    ).base();
+
+    if (first >= last) {
+        return "";
+    }
+
+    return std::string(first, last);
+}
+
+std::string removeComment(const std::string& text) {
+    const std::size_t commentPosition = text.find('#');
+
+    if (commentPosition == std::string::npos) {
+        return text;
+    }
+
+    return text.substr(0, commentPosition);
+}
+
+}  // namespace
 
 std::vector<std::uint64_t> TraceParser::parseFile(
     const std::string& filePath
@@ -24,12 +63,17 @@ std::vector<std::uint64_t> TraceParser::parseFile(
     while (std::getline(inputFile, line)) {
         ++lineNumber;
 
-        if (line.empty()) {
+        const std::string cleanedLine =
+            trim(removeComment(line));
+
+        if (cleanedLine.empty()) {
             continue;
         }
 
         try {
-            addresses.push_back(parseAddress(line));
+            addresses.push_back(
+                parseAddress(cleanedLine)
+            );
         } catch (const std::exception& error) {
             throw std::runtime_error(
                 "Invalid address on line " +
