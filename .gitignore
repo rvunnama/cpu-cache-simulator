@@ -1,5 +1,6 @@
+build/
 cache_simulator
 cache_tests
-build/
+*.csv
 .DS_Store
 .vscode/
