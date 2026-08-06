@@ -12,7 +12,9 @@
 std::vector<BenchmarkResult> BenchmarkRunner::run(
     const std::vector<MemoryAccess>& accesses,
     std::size_t cacheSize,
-    std::size_t blockSize
+    std::size_t blockSize,
+    double cacheAccessTime,
+    double memoryPenalty
 ) {
     const std::size_t totalLines =
         cacheSize / blockSize;
@@ -73,7 +75,9 @@ std::vector<BenchmarkResult> BenchmarkRunner::run(
                             associativity,
                             replacementPolicy,
                             writePolicy,
-                            writeMissPolicy
+                            writeMissPolicy,
+                            cacheAccessTime,
+                            memoryPenalty
                         )
                     );
                 }
@@ -91,7 +95,9 @@ BenchmarkResult BenchmarkRunner::runConfiguration(
     std::size_t associativity,
     ReplacementPolicy replacementPolicy,
     WritePolicy writePolicy,
-    WriteMissPolicy writeMissPolicy
+    WriteMissPolicy writeMissPolicy,
+    double cacheAccessTime,
+    double memoryPenalty
 ) {
     SetAssociativeCache cache(
         cacheSize,
@@ -121,7 +127,11 @@ BenchmarkResult BenchmarkRunner::runConfiguration(
         statistics.getMemoryReads(),
         statistics.getMemoryWrites(),
         statistics.getDirtyEvictions(),
-        statistics.getHitRate()
+        statistics.getHitRate(),
+        statistics.calculateAmat(
+            cacheAccessTime,
+            memoryPenalty
+        )
     };
 }
 
@@ -133,7 +143,7 @@ void BenchmarkRunner::printResults(
     std::cout
         << "------------------------------------------------"
         << "------------------------------------------------"
-        << "----------------\n";
+        << "--------------------------\n";
 
     std::cout
         << std::left
@@ -146,44 +156,40 @@ void BenchmarkRunner::printResults(
         << std::setw(10) << "Mem Read"
         << std::setw(10) << "Mem Write"
         << std::setw(12) << "Dirty Evict"
-        << "Hit Rate\n";
+        << std::setw(12) << "Hit Rate %"
+        << "AMAT (ns)\n";
 
     std::cout
         << "------------------------------------------------"
         << "------------------------------------------------"
-        << "----------------\n";
+        << "--------------------------\n";
 
     for (const BenchmarkResult& result : results) {
         std::cout
             << std::left
-            << std::setw(8)
-            << result.associativity
+            << std::setw(8) << result.associativity
             << std::setw(8)
             << replacementPolicyToString(
-                   result.replacementPolicy
-               )
+                result.replacementPolicy
+            )
             << std::setw(16)
             << writePolicyToString(
-                   result.writePolicy
-               )
+                result.writePolicy
+            )
             << std::setw(20)
             << writeMissPolicyToString(
-                   result.writeMissPolicy
-               )
-            << std::setw(8)
-            << result.hits
-            << std::setw(8)
-            << result.misses
-            << std::setw(10)
-            << result.memoryReads
-            << std::setw(10)
-            << result.memoryWrites
-            << std::setw(12)
-            << result.dirtyEvictions
+                result.writeMissPolicy
+            )
+            << std::setw(8) << result.hits
+            << std::setw(8) << result.misses
+            << std::setw(10) << result.memoryReads
+            << std::setw(10) << result.memoryWrites
+            << std::setw(12) << result.dirtyEvictions
             << std::fixed
             << std::setprecision(2)
-            << result.hitRate
-            << "%\n";
+            << std::setw(12) << result.hitRate
+            << result.amat
+            << '\n';
     }
 }
 
@@ -211,7 +217,8 @@ void BenchmarkRunner::exportCsv(
         << "MemoryReads,"
         << "MemoryWrites,"
         << "DirtyEvictions,"
-        << "HitRate\n";
+        << "HitRate,"
+        << "AMAT\n";
 
     for (const BenchmarkResult& result : results) {
         outputFile
@@ -234,7 +241,8 @@ void BenchmarkRunner::exportCsv(
             << result.dirtyEvictions << ','
             << std::fixed
             << std::setprecision(2)
-            << result.hitRate
+            << result.hitRate << ','
+            << result.amat
             << '\n';
     }
 }

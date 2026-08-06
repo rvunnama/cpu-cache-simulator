@@ -418,7 +418,9 @@ int main(int argc, char* argv[]) {
                 BenchmarkRunner::run(
                     accesses,
                     options.cacheSize,
-                    options.blockSize
+                    options.blockSize,
+                    options.cacheAccessTime,
+                    options.memoryPenalty
                 );
 
             BenchmarkRunner::printResults(results);

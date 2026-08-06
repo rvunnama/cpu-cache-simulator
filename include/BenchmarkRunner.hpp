@@ -26,6 +26,7 @@ struct BenchmarkResult {
     std::size_t dirtyEvictions;
 
     double hitRate;
+    double amat;
 };
 
 class BenchmarkRunner {
@@ -33,7 +34,9 @@ public:
     static std::vector<BenchmarkResult> run(
         const std::vector<MemoryAccess>& accesses,
         std::size_t cacheSize,
-        std::size_t blockSize
+        std::size_t blockSize,
+        double cacheAccessTime,
+        double memoryPenalty
     );
 
     static void printResults(
@@ -53,7 +56,9 @@ private:
         std::size_t associativity,
         ReplacementPolicy replacementPolicy,
         WritePolicy writePolicy,
-        WriteMissPolicy writeMissPolicy
+        WriteMissPolicy writeMissPolicy,
+        double cacheAccessTime,
+        double memoryPenalty
     );
 
     static const char* replacementPolicyToString(
