@@ -22,6 +22,8 @@ add_library(
     src/CacheSet.cpp
     src/SetAssociativeCache.cpp
     src/MissClassifier.cpp
+    src/CacheHierarchy.cpp
+    src/HierarchyStatistics.cpp
 )
 
 target_include_directories(
@@ -77,4 +79,20 @@ target_include_directories(
 add_test(
     NAME trace_parser_tests
     COMMAND trace_parser_tests
+)
+
+add_executable(
+    hierarchy_tests
+    tests/hierarchy_tests.cpp
+)
+
+target_link_libraries(
+    hierarchy_tests
+    PRIVATE
+    cache_core
+)
+
+add_test(
+    NAME hierarchy_tests
+    COMMAND hierarchy_tests
 )

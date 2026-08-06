@@ -267,3 +267,81 @@ const CacheStatistics&
 SetAssociativeCache::getStatistics() const {
     return statistics_;
 }
+
+bool SetAssociativeCache::contains(
+    std::uint64_t address
+) {
+    ++accessCounter_;
+
+    const std::uint64_t blockAddress =
+        calculateBlockAddress(address);
+
+    const std::size_t setIndex =
+        calculateSetIndex(blockAddress);
+
+    const std::uint64_t tag =
+        calculateTag(blockAddress);
+
+    CacheSet& set = sets_.at(setIndex);
+    std::vector<CacheLine>& lines = set.getLines();
+
+    for (CacheLine& line : lines) {
+        if (line.valid && line.tag == tag) {
+            line.lastAccessOrder = accessCounter_;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+CacheAccessResult SetAssociativeCache::insert(
+    const MemoryAccess& access
+) {
+    ++accessCounter_;
+
+    const std::uint64_t blockAddress =
+        calculateBlockAddress(access.address);
+
+    const std::size_t setIndex =
+        calculateSetIndex(blockAddress);
+
+    const std::uint64_t tag =
+        calculateTag(blockAddress);
+
+    CacheSet& set = sets_.at(setIndex);
+
+    CacheLine& insertionLine =
+        set.selectLineForInsertion(
+            replacementPolicy_
+        );
+
+    const bool evictionOccurred =
+        insertionLine.valid;
+
+    const bool dirtyEviction =
+        insertionLine.valid &&
+        insertionLine.dirty;
+
+    const std::uint64_t evictedBlockAddress =
+        evictionOccurred
+            ? insertionLine.blockAddress
+            : 0;
+
+    insertionLine.valid = true;
+    insertionLine.dirty =
+        access.type == AccessType::Write &&
+        writePolicy_ == WritePolicy::WriteBack;
+    insertionLine.tag = tag;
+    insertionLine.blockAddress = blockAddress;
+    insertionLine.insertionOrder = accessCounter_;
+    insertionLine.lastAccessOrder = accessCounter_;
+
+    return {
+        false,
+        false,
+        evictionOccurred,
+        dirtyEviction,
+        evictedBlockAddress
+    };
+}

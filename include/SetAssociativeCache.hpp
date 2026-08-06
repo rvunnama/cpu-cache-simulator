@@ -25,6 +25,14 @@ public:
         WriteMissPolicy writeMissPolicy
     );
 
+    bool contains(
+        std::uint64_t address
+    );
+
+    CacheAccessResult insert(
+        const MemoryAccess& access
+    );
+
     CacheAccessResult access(
         const MemoryAccess& access
     );
