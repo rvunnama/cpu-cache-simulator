@@ -8,7 +8,9 @@ namespace {
 std::size_t validateAndCalculateLineCount(
     std::size_t cacheSize,
     std::size_t blockSize,
-    std::size_t associativity
+    std::size_t associativity,
+    WritePolicy writePolicy,
+    WriteMissPolicy writeMissPolicy
 ) {
     if (cacheSize == 0) {
         throw std::invalid_argument(
@@ -44,6 +46,15 @@ std::size_t validateAndCalculateLineCount(
         );
     }
 
+    if (
+        writePolicy == WritePolicy::WriteBack &&
+        writeMissPolicy == WriteMissPolicy::NoWriteAllocate
+    ) {
+        throw std::invalid_argument(
+            "Write-back must be used with write-allocate."
+        );
+    }
+
     return numberOfLines;
 }
 
@@ -61,11 +72,13 @@ SetAssociativeCache::SetAssociativeCache(
       blockSize_(blockSize),
       associativity_(associativity),
       numberOfLines_(
-          validateAndCalculateLineCount(
-              cacheSize,
-              blockSize,
-              associativity
-          )
+        validateAndCalculateLineCount(
+            cacheSize,
+            blockSize,
+            associativity,
+            writePolicy,
+            writeMissPolicy
+        )
       ),
       numberOfSets_(numberOfLines_ / associativity_),
       replacementPolicy_(replacementPolicy),

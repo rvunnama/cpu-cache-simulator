@@ -70,6 +70,13 @@ std::vector<BenchmarkResult> BenchmarkRunner::run(
                     const WriteMissPolicy writeMissPolicy :
                     writeMissPolicies
                 ) {
+                    if (
+                        writePolicy == WritePolicy::WriteBack &&
+                        writeMissPolicy ==
+                            WriteMissPolicy::NoWriteAllocate
+                    ) {
+                        continue;
+                    }
                     results.push_back(
                         runConfiguration(
                             accesses,

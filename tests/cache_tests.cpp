@@ -429,6 +429,107 @@ void testAverageAccessCost() {
         << "PASS: average access cost\n";
 }
 
+void testInvalidWritePolicyCombination() {
+    bool exceptionThrown = false;
+
+    try {
+        SetAssociativeCache cache(
+            64,
+            16,
+            2,
+            ReplacementPolicy::LRU,
+            WritePolicy::WriteBack,
+            WriteMissPolicy::NoWriteAllocate
+        );
+    } catch (const std::invalid_argument&) {
+        exceptionThrown = true;
+    }
+
+    assert(exceptionThrown);
+
+    std::cout
+        << "PASS: invalid write-policy combination rejected\n";
+}
+
+void testEmptyStatistics() {
+    CacheStatistics statistics;
+
+    assert(statistics.getTotalAccesses() == 0);
+    assert(
+        approximatelyEqual(
+            statistics.getHitRate(),
+            0.0
+        )
+    );
+    assert(
+        approximatelyEqual(
+            statistics.getMissRate(),
+            0.0
+        )
+    );
+    assert(
+        approximatelyEqual(
+            statistics.calculateAmat(
+                1.0,
+                100.0
+            ),
+            1.0
+        )
+    );
+    assert(
+        approximatelyEqual(
+            statistics.calculateAverageAccessCost(
+                1.0,
+                100.0,
+                100.0
+            ),
+            0.0
+        )
+    );
+
+    std::cout
+        << "PASS: empty statistics handled safely\n";
+}
+
+void testDirtyBitClearedAfterReplacement() {
+    SetAssociativeCache cache(
+        16,
+        16,
+        1,
+        ReplacementPolicy::FIFO,
+        WritePolicy::WriteBack,
+        WriteMissPolicy::WriteAllocate
+    );
+
+    cache.access({
+        AccessType::Write,
+        0x0000
+    });
+
+    cache.access({
+        AccessType::Read,
+        0x0010
+    });
+
+    const CacheLine& line =
+        cache.getSets()
+             .at(0)
+             .getLines()
+             .at(0);
+
+    assert(line.valid);
+    assert(!line.dirty);
+
+    const CacheStatistics& statistics =
+        cache.getStatistics();
+
+    assert(statistics.getDirtyEvictions() == 1);
+    assert(statistics.getMemoryWrites() == 1);
+
+    std::cout
+        << "PASS: dirty bit cleared after replacement\n";
+}
+
 }  // namespace
 
 int main() {
@@ -445,6 +546,9 @@ int main() {
     testNoWriteAllocateBypassesCache();
     testAmatCalculation();
     testAverageAccessCost();
+    testInvalidWritePolicyCombination();
+    testEmptyStatistics();
+    testDirtyBitClearedAfterReplacement();
 
     std::cout << "\nAll cache tests passed.\n";
 
