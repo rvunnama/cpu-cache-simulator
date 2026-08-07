@@ -7,6 +7,9 @@
 #include "WritePolicy.hpp"
 #include "WriteMissPolicy.hpp"
 #include "CacheAccessResult.hpp"
+#include "CacheHierarchy.hpp"
+#include "HierarchyAccessResult.hpp"
+#include "HierarchyStatistics.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -17,6 +20,7 @@
 #include <vector>
 #include <cstdlib>
 #include <iomanip>
+#include <utility>
 
 namespace {
 
@@ -44,6 +48,20 @@ struct ProgramOptions {
     double cacheAccessTime = 1.0;
     double memoryReadPenalty = 100.0;
     double memoryWritePenalty = 100.0;
+
+    bool hierarchy = false;
+
+    std::size_t l1Size = 32;
+    std::size_t l1BlockSize = 16;
+    std::size_t l1Associativity = 1;
+
+    std::size_t l2Size = 128;
+    std::size_t l2BlockSize = 16;
+    std::size_t l2Associativity = 2;
+
+    double l1Latency = 1.0;
+    double l2Latency = 10.0;
+    double memoryLatency = 100.0;
 };
 
 void printUsage(const std::string& programName) {
@@ -79,6 +97,16 @@ void printUsage(const std::string& programName) {
         << "  --memory-write-penalty <ns>"
         << " Main-memory write cost\n"
         << "  --help                 Show this help message\n\n"
+        << "  --hierarchy            Enable two-level L1/L2 mode\n"
+        << "  --l1-size <bytes>      L1 cache capacity\n"
+        << "  --l1-block-size <bytes> L1 block size\n"
+        << "  --l1-associativity <ways> L1 associativity\n"
+        << "  --l2-size <bytes>      L2 cache capacity\n"
+        << "  --l2-block-size <bytes> L2 block size\n"
+        << "  --l2-associativity <ways> L2 associativity\n"
+        << "  --l1-latency <ns>      L1 access latency\n"
+        << "  --l2-latency <ns>      L2 access latency\n"
+        << "  --memory-latency <ns>  Main-memory latency\n"
         << "Example:\n"
         << "  " << programName
         << " --cache-size 64"
@@ -274,6 +302,11 @@ ProgramOptions parseArguments(int argc, char* argv[]) {
             continue;
         }
 
+        if (argument == "--hierarchy") {
+            options.hierarchy = true;
+            continue;
+        }
+
         if (argument == "--cache-size") {
             if (index + 1 >= argc) {
                 throw std::invalid_argument(
@@ -399,6 +432,119 @@ ProgramOptions parseArguments(int argc, char* argv[]) {
                     "--memory-write-penalty"
                 );
 
+        } else if (argument == "--l1-size") {
+            if (index + 1 >= argc) {
+                throw std::invalid_argument(
+                    "Missing value after --l1-size."
+                );
+            }
+
+            options.l1Size =
+                parseSize(argv[++index], "--l1-size");
+
+        } else if (argument == "--l1-block-size") {
+            if (index + 1 >= argc) {
+                throw std::invalid_argument(
+                    "Missing value after --l1-block-size."
+                );
+            }
+
+            options.l1BlockSize =
+                parseSize(
+                    argv[++index],
+                    "--l1-block-size"
+                );
+
+        } else if (argument == "--l1-associativity") {
+            if (index + 1 >= argc) {
+                throw std::invalid_argument(
+                    "Missing value after "
+                    "--l1-associativity."
+                );
+            }
+
+            options.l1Associativity =
+                parseSize(
+                    argv[++index],
+                    "--l1-associativity"
+                );
+
+        } else if (argument == "--l2-size") {
+            if (index + 1 >= argc) {
+                throw std::invalid_argument(
+                    "Missing value after --l2-size."
+                );
+            }
+
+            options.l2Size =
+                parseSize(argv[++index], "--l2-size");
+
+        } else if (argument == "--l2-block-size") {
+            if (index + 1 >= argc) {
+                throw std::invalid_argument(
+                    "Missing value after --l2-block-size."
+                );
+            }
+
+            options.l2BlockSize =
+                parseSize(
+                    argv[++index],
+                    "--l2-block-size"
+                );
+
+        } else if (argument == "--l2-associativity") {
+            if (index + 1 >= argc) {
+                throw std::invalid_argument(
+                    "Missing value after "
+                    "--l2-associativity."
+                );
+            }
+
+            options.l2Associativity =
+                parseSize(
+                    argv[++index],
+                    "--l2-associativity"
+                );
+
+        } else if (argument == "--l1-latency") {
+            if (index + 1 >= argc) {
+                throw std::invalid_argument(
+                    "Missing value after --l1-latency."
+                );
+            }
+
+            options.l1Latency =
+                parsePositiveDouble(
+                    argv[++index],
+                    "--l1-latency"
+                );
+
+        } else if (argument == "--l2-latency") {
+            if (index + 1 >= argc) {
+                throw std::invalid_argument(
+                    "Missing value after --l2-latency."
+                );
+            }
+
+            options.l2Latency =
+                parsePositiveDouble(
+                    argv[++index],
+                    "--l2-latency"
+                );
+
+        } else if (argument == "--memory-latency") {
+            if (index + 1 >= argc) {
+                throw std::invalid_argument(
+                    "Missing value after --memory-latency."
+                );
+            }
+
+            options.memoryLatency =
+                parsePositiveDouble(
+                    argv[++index],
+                    "--memory-latency"
+                );
+
         } else {
             throw std::invalid_argument(
                 "Unknown option: " + argument
@@ -432,6 +578,126 @@ int main(int argc, char* argv[]) {
           
         const std::vector<MemoryAccess> accesses =
             TraceParser::parseFile(options.tracePath);
+
+        if (options.hierarchy) {
+            if (options.l1BlockSize != options.l2BlockSize) {
+                throw std::invalid_argument(
+                    "L1 and L2 block sizes must match "
+                    "in the current hierarchy model."
+                );
+            }
+
+            SetAssociativeCache l1(
+                options.l1Size,
+                options.l1BlockSize,
+                options.l1Associativity,
+                options.replacementPolicy,
+                options.writePolicy,
+                options.writeMissPolicy
+            );
+
+            SetAssociativeCache l2(
+                options.l2Size,
+                options.l2BlockSize,
+                options.l2Associativity,
+                options.replacementPolicy,
+                options.writePolicy,
+                options.writeMissPolicy
+            );
+
+            CacheHierarchy hierarchy(
+                std::move(l1),
+                std::move(l2)
+            );
+
+            std::cout << "Two-Level Cache Hierarchy\n";
+            std::cout << "L1 size: "
+                    << options.l1Size
+                    << " bytes\n";
+            std::cout << "L1 associativity: "
+                    << options.l1Associativity
+                    << "-way\n";
+            std::cout << "L1 latency: "
+                    << options.l1Latency
+                    << " ns\n";
+
+            std::cout << "L2 size: "
+                    << options.l2Size
+                    << " bytes\n";
+            std::cout << "L2 associativity: "
+                    << options.l2Associativity
+                    << "-way\n";
+            std::cout << "L2 latency: "
+                    << options.l2Latency
+                    << " ns\n";
+
+            std::cout << "Memory latency: "
+                    << options.memoryLatency
+                    << " ns\n\n";
+
+            double totalLatency = 0.0;
+
+            for (const MemoryAccess& access : accesses) {
+                const HierarchyAccessResult result =
+                    hierarchy.access(access);
+
+                if (result.l1Hit) {
+                    totalLatency += options.l1Latency;
+                } else if (result.l2Hit) {
+                    totalLatency +=
+                        options.l1Latency +
+                        options.l2Latency;
+                } else {
+                    totalLatency +=
+                        options.l1Latency +
+                        options.l2Latency +
+                        options.memoryLatency;
+                }
+
+                if (options.verbose) {
+                    std::cout
+                        << (
+                            access.type == AccessType::Read
+                                ? "READ "
+                                : "WRITE "
+                        )
+                        << "0x"
+                        << std::hex
+                        << access.address
+                        << std::dec
+                        << ": ";
+
+                    if (result.l1Hit) {
+                        std::cout << "L1 HIT";
+                    } else if (result.l2Hit) {
+                        std::cout << "L2 HIT";
+                    } else {
+                        std::cout << "MEMORY";
+                    }
+
+                    std::cout << '\n';
+                }
+            }
+
+            hierarchy.printStatistics();
+
+            const double averageHierarchyLatency =
+                accesses.empty()
+                    ? 0.0
+                    : totalLatency /
+                        static_cast<double>(
+                            accesses.size()
+                        );
+
+            std::cout << std::fixed
+                    << std::setprecision(2);
+
+            std::cout << "Average hierarchy latency: "
+                    << averageHierarchyLatency
+                    << " ns\n";
+
+            return 0;
+        }
 
         if (options.benchmark) {
             const std::vector<BenchmarkResult> results =
