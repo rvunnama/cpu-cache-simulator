@@ -32,6 +32,7 @@ The simulator models direct-mapped and set-associative caches, multiple replacem
 
 ## Project Structure
 
+ ```text
 cpu-cache-simulator/
 ├── include/
 ├── src/
@@ -40,8 +41,8 @@ cpu-cache-simulator/
 ├── scripts/
 ├── results/
 ├── README.md
-├── CMakeLists.txt
-└── LICENSE
+└── CMakeLists.txt
+```
 
 ## Architecture
 
