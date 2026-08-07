@@ -1,4 +1,5 @@
 #include "CacheHierarchy.hpp"
+#include "CacheInvalidationResult.hpp"
 
 #include <utility>
 
@@ -111,7 +112,24 @@ void CacheHierarchy::handleL2InsertionResult(
 
     statistics_.recordL2Eviction();
 
-    if (result.dirtyEviction) {
+    const CacheInvalidationResult l1Invalidation =
+        l1_.invalidateBlock(
+            result.evictedBlockAddress
+        );
+
+    if (l1Invalidation.found) {
+        statistics_.recordL1Invalidation();
+    }
+
+    const bool newestDataWasDirty =
+        result.dirtyEviction ||
+        l1Invalidation.dirty;
+
+    if (l1Invalidation.dirty) {
+        statistics_.recordDirtyL1Invalidation();
+    }
+
+    if (newestDataWasDirty) {
         statistics_.recordL2DirtyWriteBack();
         statistics_.recordMemoryAccess();
     }

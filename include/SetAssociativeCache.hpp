@@ -9,6 +9,7 @@
 #include "WriteMissPolicy.hpp"
 #include "MissClassifier.hpp"
 #include "CacheAccessResult.hpp"
+#include "CacheInvalidationResult.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -38,6 +39,10 @@ public:
     );
 
     CacheAccessResult writeBackBlock(
+        std::uint64_t blockAddress
+    );
+
+    CacheInvalidationResult invalidateBlock(
         std::uint64_t blockAddress
     );
 

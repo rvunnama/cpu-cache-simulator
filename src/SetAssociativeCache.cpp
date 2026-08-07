@@ -412,3 +412,40 @@ CacheAccessResult SetAssociativeCache::writeBackBlock(
         evictedBlockAddress
     };
 }
+
+CacheInvalidationResult
+SetAssociativeCache::invalidateBlock(
+    std::uint64_t blockAddress
+) {
+    const std::size_t setIndex =
+        calculateSetIndex(blockAddress);
+
+    const std::uint64_t tag =
+        calculateTag(blockAddress);
+
+    CacheSet& set = sets_.at(setIndex);
+    std::vector<CacheLine>& lines = set.getLines();
+
+    for (CacheLine& line : lines) {
+        if (line.valid && line.tag == tag) {
+            const bool wasDirty = line.dirty;
+
+            line.valid = false;
+            line.dirty = false;
+            line.tag = 0;
+            line.blockAddress = 0;
+            line.insertionOrder = 0;
+            line.lastAccessOrder = 0;
+
+            return {
+                true,
+                wasDirty
+            };
+        }
+    }
+
+    return {
+        false,
+        false
+    };
+}

@@ -73,6 +73,55 @@ void testDirtyL1EvictionWritesBackToL2() {
         << "PASS: dirty L1 eviction writes back to L2\n";
 }
 
+void testL2EvictionInvalidatesL1() {
+    SetAssociativeCache l1(
+        32,
+        16,
+        2,
+        ReplacementPolicy::LRU,
+        WritePolicy::WriteBack,
+        WriteMissPolicy::WriteAllocate
+    );
+
+    SetAssociativeCache l2(
+        16,
+        16,
+        1,
+        ReplacementPolicy::LRU,
+        WritePolicy::WriteBack,
+        WriteMissPolicy::WriteAllocate
+    );
+
+    CacheHierarchy hierarchy(
+        std::move(l1),
+        std::move(l2)
+    );
+
+    hierarchy.access({
+        AccessType::Read,
+        0x0000
+    });
+
+    hierarchy.access({
+        AccessType::Read,
+        0x0010
+    });
+
+    const bool blockZeroStillInL1 =
+        hierarchy.getL1().contains(0x0000);
+
+    assert(!blockZeroStillInL1);
+
+    const HierarchyStatistics& statistics =
+        hierarchy.getStatistics();
+
+    assert(statistics.getL2Evictions() == 1);
+    assert(statistics.getL1Invalidations() == 1);
+
+    std::cout
+        << "PASS: L2 eviction invalidates L1 copy\n";
+}
+
 int main() {
     SetAssociativeCache l1(
         16,
@@ -140,6 +189,8 @@ int main() {
     assert(statistics.getMemoryAccesses() == 2);
 
     testDirtyL1EvictionWritesBackToL2();
+
+    testL2EvictionInvalidatesL1();
 
     std::cout
         << "All cache hierarchy tests passed.\n";

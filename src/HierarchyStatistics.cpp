@@ -77,6 +77,24 @@ HierarchyStatistics::getL2DirtyWriteBacks() const {
     return l2DirtyWriteBacks_;
 }
 
+void HierarchyStatistics::recordL1Invalidation() {
+    ++l1Invalidations_;
+}
+
+void HierarchyStatistics::recordDirtyL1Invalidation() {
+    ++dirtyL1Invalidations_;
+}
+
+std::size_t
+HierarchyStatistics::getL1Invalidations() const {
+    return l1Invalidations_;
+}
+
+std::size_t
+HierarchyStatistics::getDirtyL1Invalidations() const {
+    return dirtyL1Invalidations_;
+}
+
 void HierarchyStatistics::printReport() const {
     std::cout << "\nCache Hierarchy Statistics\n";
     std::cout << "--------------------------\n";
@@ -110,4 +128,12 @@ void HierarchyStatistics::printReport() const {
     std::cout << "L2 dirty write-backs to memory: "
               << l2DirtyWriteBacks_
               << '\n';
+
+    std::cout << "L1 invalidations caused by L2: "
+              << l1Invalidations_
+              << '\n';
+
+    std::cout << "Dirty L1 invalidations: "
+            << dirtyL1Invalidations_
+            << '\n';
 }

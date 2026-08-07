@@ -29,6 +29,12 @@ public:
     std::size_t getL2Evictions() const;
     std::size_t getL2DirtyWriteBacks() const;
 
+    void recordL1Invalidation();
+    void recordDirtyL1Invalidation();
+
+    std::size_t getL1Invalidations() const;
+    std::size_t getDirtyL1Invalidations() const;
+
 private:
     std::size_t l1Hits_ = 0;
     std::size_t l1Misses_ = 0;
@@ -39,6 +45,8 @@ private:
     std::size_t l1DirtyWriteBacks_ = 0;
     std::size_t l2Evictions_ = 0;
     std::size_t l2DirtyWriteBacks_ = 0;
+    std::size_t l1Invalidations_ = 0;
+    std::size_t dirtyL1Invalidations_ = 0;
 };
 
 #endif
