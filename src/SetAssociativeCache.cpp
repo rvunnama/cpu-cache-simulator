@@ -449,3 +449,30 @@ SetAssociativeCache::invalidateBlock(
         false
     };
 }
+
+bool SetAssociativeCache::hasBlock(
+    std::uint64_t blockAddress
+) const {
+    const std::size_t setIndex =
+        calculateSetIndex(blockAddress);
+
+    const std::uint64_t tag =
+        calculateTag(blockAddress);
+
+    const CacheSet& set =
+        sets_.at(setIndex);
+
+    const std::vector<CacheLine>& lines =
+        set.getLines();
+
+    for (const CacheLine& line : lines) {
+        if (
+            line.valid &&
+            line.tag == tag
+        ) {
+            return true;
+        }
+    }
+
+    return false;
+}

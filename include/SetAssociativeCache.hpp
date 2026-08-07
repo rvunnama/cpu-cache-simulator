@@ -30,6 +30,10 @@ public:
         std::uint64_t address
     );
 
+    bool hasBlock(
+        std::uint64_t blockAddress
+    ) const;
+
     CacheAccessResult insert(
         const MemoryAccess& access
     );

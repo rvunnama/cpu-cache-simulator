@@ -718,6 +718,44 @@ void testCacheAccessResultReportsEviction() {
         << "PASS: cache access result reports eviction\n";
 }
 
+void testHasBlockDoesNotAffectLru() {
+    SetAssociativeCache cache(
+        32,
+        16,
+        2,
+        ReplacementPolicy::LRU,
+        WritePolicy::WriteThrough,
+        WriteMissPolicy::WriteAllocate
+    );
+
+    cache.access({
+        AccessType::Read,
+        0x0000
+    });
+
+    cache.access({
+        AccessType::Read,
+        0x0010
+    });
+
+    // Inspect block 0 without changing LRU ordering.
+    assert(cache.hasBlock(0));
+
+    // This should evict block 0 because it is still
+    // the least recently used block.
+    cache.access({
+        AccessType::Read,
+        0x0020
+    });
+
+    assert(!cache.hasBlock(0));
+    assert(cache.hasBlock(1));
+    assert(cache.hasBlock(2));
+
+    std::cout
+        << "PASS: cache inspection does not affect LRU\n";
+}
+
 }  // namespace
 
 int main() {
@@ -743,6 +781,7 @@ int main() {
     testBypassMissClassification();
     testTotalClassifiedMisses();
     testCacheAccessResultReportsEviction();
+    testHasBlockDoesNotAffectLru();
 
     std::cout << "\nAll cache tests passed.\n";
 

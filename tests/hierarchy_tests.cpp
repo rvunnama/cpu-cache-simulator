@@ -108,7 +108,7 @@ void testL2EvictionInvalidatesL1() {
     });
 
     const bool blockZeroStillInL1 =
-        hierarchy.getL1().contains(0x0000);
+        hierarchy.getL1().hasBlock(0);
 
     assert(!blockZeroStillInL1);
 
