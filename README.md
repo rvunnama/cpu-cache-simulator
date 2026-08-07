@@ -30,6 +30,29 @@ The simulator models direct-mapped and set-associative caches, multiple replacem
 - Standard Template Library
 - Git and GitHub
 
+## Architecture
+
+```text
+main.cpp
+│
+├── TraceParser
+├── WorkloadGenerator
+├── BenchmarkRunner
+├── HierarchyBenchmarkRunner
+├── ArchitectureComparisonRunner
+│
+├── SetAssociativeCache
+│   ├── CacheSet
+│   │   └── CacheLine
+│   ├── CacheStatistics
+│   ├── MissClassifier
+│   └── Replacement Policies
+│
+├── CacheHierarchy
+│   └── HierarchyStatistics
+│
+└── CacheVisualizer
+```
 ## Included Workloads
 
 The repository contains targeted traces for testing specific cache behaviors:
@@ -48,25 +71,18 @@ The repository contains targeted traces for testing specific cache behaviors:
 
 Synthetic workloads can also be generated with `--generate sequential`, `loop`, `stride`, or `random`.
 
-## Architecture
+## Performance Results
 
-```text
-main.cpp
-   |
-   +-- TraceParser
-   |      |
-   |      +-- MemoryAccess
-   |
-   +-- SetAssociativeCache
-   |      |
-   |      +-- CacheSet
-   |      |      |
-   |      |      +-- CacheLine
-   |      |
-   |      +-- CacheStatistics
-   |      |
-   |      +-- MissClassifier
-   |
-   +-- CacheVisualizer
-   |
-   +-- BenchmarkRunner
+### Cache Size Scaling
+
+![Hit Rate vs Cache Size](results/hit_rate_vs_cache_size.png)
+
+![Average Access Cost vs Cache Size](results/access_cost_vs_cache_size.png)
+
+### Next-Line Prefetching
+
+![Prefetch Hit Rate](results/prefetch_hit_rate.png)
+
+![Prefetch Memory Traffic](results/prefetch_memory_reads.png)
+
+Next-line prefetching improves sequential demand hit rate by proactively loading the following cache block. The benefit is workload-dependent and is much smaller for random-access patterns.
