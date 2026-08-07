@@ -832,37 +832,35 @@ int main(int argc, char* argv[]) {
             return 0;
         }
 
-        std::cout << "CPU Cache Simulator\n";
-        std::cout << "Cache size: "
+        std::cout
+                  << "\n========================================\n"
+                  << "CPU Cache Simulator\n"
+                  << "========================================\n";
+        std::cout
+                  << "Cache size:          "
                   << options.cacheSize
-                  << " bytes\n";
-        std::cout << "Block size: "
+                  << " bytes\n"
+                  << "Block size:          "
                   << options.blockSize
-                  << " bytes\n";
-        std::cout << "Trace file: "
-                  << options.tracePath
-                  << "\n\n";
-        std::cout << "Verbose mode: "
-                  << (options.verbose ? "enabled" : "disabled")
-                  << "\n\n";
-        std::cout << "Associativity: "
+                  << " bytes\n"
+                  << "Associativity:       "
                   << options.associativity
-                  << "-way\n";
-        std::cout << "Replacement policy: "
+                  << "-way\n"
+                  << "Replacement policy:  "
                   << replacementPolicyToString(
-                          options.replacementPolicy
-                      )
-                  << '\n';
-        std::cout << "Write policy: "
+                      options.replacementPolicy
+                  )
+                  << '\n'
+                  << "Write policy:        "
                   << writePolicyToString(
-                          options.writePolicy
-                      )
-                  << '\n';
-        std::cout << "Write-miss policy: "
+                      options.writePolicy
+                  )
+                  << '\n'
+                  << "Write-miss policy:   "
                   << writeMissPolicyToString(
-                          options.writeMissPolicy
-                      )
-                  << '\n';
+                      options.writeMissPolicy
+                  )
+                  << "\n========================================\n";
         
 
         for (const MemoryAccess& access : accesses) {
@@ -873,19 +871,35 @@ int main(int argc, char* argv[]) {
 
             if (options.verbose) {
                 std::cout
-                    << "\n"
                     << (
                         access.type == AccessType::Read
-                            ? "READ"
-                            : "WRITE"
+                            ? "[READ ] "
+                            : "[WRITE] "
                     )
-                    << " 0x"
+                    << "0x"
                     << std::hex
                     << access.address
                     << std::dec
-                    << ": "
-                    << (hit ? "HIT" : "MISS")
-                    << '\n';
+                    << " -> "
+                    << (result.hit ? "HIT" : "MISS");
+
+                if (result.bypassed) {
+                    std::cout << " (CACHE BYPASS)";
+                }
+
+                if (result.evictionOccurred) {
+                    std::cout
+                        << " | Evicted block 0x"
+                        << std::hex
+                        << result.evictedBlockAddress
+                        << std::dec;
+
+                    if (result.dirtyEviction) {
+                        std::cout << " [DIRTY]";
+                    }
+                }
+
+                std::cout << '\n';
             }
 
             if (options.step) {
