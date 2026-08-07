@@ -66,6 +66,48 @@ main.cpp
 │
 └── CacheVisualizer
 ```
+## Quick Start
+
+### Prerequisites
+
+- C++17 compatible compiler (GCC, Clang, or MSVC)
+- CMake 3.16 or newer
+
+### Clone the Repository
+
+```bash
+git clone https://github.com/rvunnama/cpu-cache-simulator.git
+cd cpu-cache-simulator
+```
+
+### Build
+
+```bash
+mkdir build
+cd build
+cmake ..
+cmake --build .
+```
+
+### Run
+
+```bash
+./cache_simulator \
+  --cache-size 64 \
+  --block-size 16 \
+  --associativity 2 \
+  --replacement lru \
+  --write-policy write-through \
+  --write-miss-policy write-allocate \
+  --trace ../traces/basic.trace \
+  --verbose
+```
+
+### View All Available Options
+
+```bash
+./cache_simulator --help
+```
 
 ## Example Commands
 
@@ -112,6 +154,24 @@ main.cpp
   --stride 16
 ```
 
+## Included Workloads
+
+The repository contains targeted traces for testing specific cache behaviors:
+
+| Trace | Purpose |
+|---|---|
+| `basic.trace` | Basic hit/miss behavior |
+| `conflict.trace` | Conflict misses |
+| `capacity.trace` | Capacity pressure |
+| `replacement.trace` | FIFO vs. LRU |
+| `locality.trace` | Temporal locality |
+| `stride.trace` | Strided access behavior |
+| `writeback.trace` | Dirty evictions |
+| `mixed.trace` | Mixed read/write behavior |
+| `stream.trace` | Streaming workload |
+
+Synthetic workloads can also be generated with `--generate sequential`, `loop`, `stride`, or `random`.
+
 ## Example Output
 
 Benchmark Results
@@ -140,67 +200,6 @@ Simulates a two-level cache hierarchy, reporting L1 hits, L2 hits, memory access
 ![--compare-architecture](screenshots/--compare-architecture-demo.png)
 
 Compares a single-cache design against a two-level L1/L2 hierarchy with the same workload and latency model by reporting hit rates, average access time, and the performance improvement of the better architecture.
-
-## Quick Start
-
-### Prerequisites
-
-- C++17 compatible compiler (GCC, Clang, or MSVC)
-- CMake 3.16 or newer
-
-### Clone the Repository
-
-```bash
-git clone https://github.com/rvunnama/cpu-cache-simulator.git
-cd cpu-cache-simulator
-```
-
-### Build
-
-```bash
-mkdir build
-cd build
-cmake ..
-cmake --build .
-```
-
-### Run
-
-```bash
-./cache_simulator \
-  --cache-size 64 \
-  --block-size 16 \
-  --associativity 2 \
-  --replacement lru \
-  --write-policy write-through \
-  --write-miss-policy write-allocate \
-  --trace ../traces/basic.trace \
-  --verbose
-```
-
-### View All Available Options
-
-```bash
-./cache_simulator --help
-```
-
-## Included Workloads
-
-The repository contains targeted traces for testing specific cache behaviors:
-
-| Trace | Purpose |
-|---|---|
-| `basic.trace` | Basic hit/miss behavior |
-| `conflict.trace` | Conflict misses |
-| `capacity.trace` | Capacity pressure |
-| `replacement.trace` | FIFO vs. LRU |
-| `locality.trace` | Temporal locality |
-| `stride.trace` | Strided access behavior |
-| `writeback.trace` | Dirty evictions |
-| `mixed.trace` | Mixed read/write behavior |
-| `stream.trace` | Streaming workload |
-
-Synthetic workloads can also be generated with `--generate sequential`, `loop`, `stride`, or `random`.
 
 ## Performance Results
 
