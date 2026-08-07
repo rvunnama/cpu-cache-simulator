@@ -37,7 +37,7 @@ public:
     std::size_t getConflictMisses() const;
 
     std::size_t getCapacityMisses() const;
-    
+
     std::size_t getBypassMisses() const;
 
     double calculateAmat(
@@ -53,6 +53,9 @@ public:
 
     void recordMissType(MissType type);
 
+    void recordPrefetch();
+    std::size_t getPrefetches() const;
+
 private:
     std::size_t hits_ = 0;
     std::size_t misses_ = 0;
@@ -63,6 +66,7 @@ private:
     std::size_t conflictMisses_ = 0;
     std::size_t capacityMisses_ = 0;
     std::size_t bypassMisses_ = 0;
+    std::size_t prefetches_ = 0;
 };
 
 #endif

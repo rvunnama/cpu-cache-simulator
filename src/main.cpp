@@ -13,6 +13,7 @@
 #include "HierarchyBenchmarkRunner.hpp"
 #include "WorkloadGenerator.hpp"
 #include "ArchitectureComparisonRunner.hpp"
+#include "PrefetchPolicy.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -78,6 +79,9 @@ struct ProgramOptions {
     unsigned int randomSeed = 42;
 
     bool compareArchitectures = false;
+
+    PrefetchPolicy prefetchPolicy =
+    PrefetchPolicy::None;
 };
 
 void printUsage(const std::string& programName) {
@@ -112,6 +116,7 @@ void printUsage(const std::string& programName) {
         << " Main-memory read cost\n"
         << "  --memory-write-penalty <ns>"
         << " Main-memory write cost\n"
+          << "  --prefetch <policy>    none or next-line\n"
         << "  --help                 Show this help message\n\n"
         << "  --hierarchy            Enable two-level L1/L2 mode\n"
         << "  --l1-size <bytes>      L1 cache capacity\n"
@@ -251,6 +256,23 @@ double parsePositiveDouble(
     return value;
 }
 
+PrefetchPolicy parsePrefetchPolicy(
+    const std::string& text
+) {
+    if (text == "none") {
+        return PrefetchPolicy::None;
+    }
+
+    if (text == "next-line") {
+        return PrefetchPolicy::NextLine;
+    }
+
+    throw std::invalid_argument(
+        "Unsupported prefetch policy: " + text +
+        ". Supported policies: none, next-line."
+    );
+}
+
 std::string replacementPolicyToString(
     ReplacementPolicy policy
 ) {
@@ -288,6 +310,20 @@ std::string writeMissPolicyToString(
 
         case WriteMissPolicy::NoWriteAllocate:
             return "No-write-allocate";
+    }
+
+    return "Unknown";
+}
+
+std::string prefetchPolicyToString(
+    PrefetchPolicy policy
+) {
+    switch (policy) {
+        case PrefetchPolicy::None:
+            return "None";
+
+        case PrefetchPolicy::NextLine:
+            return "Next-line";
     }
 
     return "Unknown";
@@ -643,6 +679,18 @@ ProgramOptions parseArguments(int argc, char* argv[]) {
                     )
                 );
 
+        } else if (argument == "--prefetch") {
+            if (index + 1 >= argc) {
+                throw std::invalid_argument(
+                    "Missing value after --prefetch."
+                );
+            }
+
+            options.prefetchPolicy =
+                parsePrefetchPolicy(
+                    argv[++index]
+                );
+
         } else {
             throw std::invalid_argument(
                 "Unknown option: " + argument
@@ -665,14 +713,15 @@ int main(int argc, char* argv[]) {
         const ProgramOptions options =
             parseArguments(argc, argv);
 
-        SetAssociativeCache cache(
-            options.cacheSize,
-            options.blockSize,
-            options.associativity,
-            options.replacementPolicy,
-            options.writePolicy,
-            options.writeMissPolicy
-        );
+            SetAssociativeCache cache(
+                options.cacheSize,
+                options.blockSize,
+                options.associativity,
+                options.replacementPolicy,
+                options.writePolicy,
+                options.writeMissPolicy,
+                options.prefetchPolicy
+            );
           
         std::vector<MemoryAccess> accesses;
 

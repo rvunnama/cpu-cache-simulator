@@ -35,6 +35,14 @@ std::size_t CacheStatistics::getTotalAccesses() const {
     return hits_ + misses_;
 }
 
+void CacheStatistics::recordPrefetch() {
+    ++prefetches_;
+}
+
+std::size_t CacheStatistics::getPrefetches() const {
+    return prefetches_;
+}
+
 double CacheStatistics::getHitRate() const {
     const std::size_t total = getTotalAccesses();
 
@@ -190,5 +198,9 @@ void CacheStatistics::printReport() const {
 
     std::cout << "Bypass misses: "
         << getBypassMisses()
+        << '\n';
+
+    std::cout << "Prefetches issued: "
+        << getPrefetches()
         << '\n';
 }

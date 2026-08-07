@@ -7,6 +7,7 @@
 #include "WorkloadGenerator.hpp"
 #include "WriteMissPolicy.hpp"
 #include "WritePolicy.hpp"
+#include "PrefetchPolicy.hpp"
 
 #include <cassert>
 #include <cmath>
@@ -449,6 +450,53 @@ void testBenchmarkSweepProducesRankedResults() {
         << "PASS: benchmark sweep ranking\n";
 }
 
+void testNextLinePrefetching() {
+    SetAssociativeCache withoutPrefetch(
+        64,
+        16,
+        4,
+        ReplacementPolicy::LRU,
+        WritePolicy::WriteThrough,
+        WriteMissPolicy::WriteAllocate,
+        PrefetchPolicy::None
+    );
+
+    SetAssociativeCache withPrefetch(
+        64,
+        16,
+        4,
+        ReplacementPolicy::LRU,
+        WritePolicy::WriteThrough,
+        WriteMissPolicy::WriteAllocate,
+        PrefetchPolicy::NextLine
+    );
+
+    const std::vector<MemoryAccess> accesses = {
+        {AccessType::Read, 0x0000},
+        {AccessType::Read, 0x0010},
+        {AccessType::Read, 0x0020},
+        {AccessType::Read, 0x0030}
+    };
+
+    for (const MemoryAccess& access : accesses) {
+        withoutPrefetch.access(access);
+        withPrefetch.access(access);
+    }
+
+    assert(
+        withPrefetch.getStatistics().getHits() >
+        withoutPrefetch.getStatistics().getHits()
+    );
+
+    assert(
+        withPrefetch.getStatistics().getPrefetches() >
+        0
+    );
+
+    std::cout
+        << "PASS: next-line prefetching\n";
+}
+
 }  // namespace
 
 int main() {
@@ -463,6 +511,7 @@ int main() {
     testSyntheticLoopLocality();
     testHierarchyBasicBehavior();
     testBenchmarkSweepProducesRankedResults();
+    testNextLinePrefetching();
 
     std::cout
         << "\nAll integration tests passed.\n";

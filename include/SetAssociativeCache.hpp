@@ -10,6 +10,7 @@
 #include "MissClassifier.hpp"
 #include "CacheAccessResult.hpp"
 #include "CacheInvalidationResult.hpp"
+#include "PrefetchPolicy.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -23,7 +24,8 @@ public:
         std::size_t associativity,
         ReplacementPolicy replacementPolicy,
         WritePolicy writePolicy,
-        WriteMissPolicy writeMissPolicy
+        WriteMissPolicy writeMissPolicy,
+        PrefetchPolicy prefetchPolicy = PrefetchPolicy::None
     );
 
     bool contains(
@@ -54,6 +56,10 @@ public:
 
     void printStatistics() const;
 
+    void prefetchNextBlock(
+        std::uint64_t blockAddress
+    );
+
     const std::vector<CacheSet>& getSets() const;
 
     const CacheStatistics& getStatistics() const;
@@ -70,6 +76,8 @@ private:
     WritePolicy writePolicy_;
 
     WriteMissPolicy writeMissPolicy_;
+
+    PrefetchPolicy prefetchPolicy_;
 
     std::vector<CacheSet> sets_;
     CacheStatistics statistics_;

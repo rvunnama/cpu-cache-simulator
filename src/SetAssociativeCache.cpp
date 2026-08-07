@@ -66,25 +66,27 @@ SetAssociativeCache::SetAssociativeCache(
     std::size_t associativity,
     ReplacementPolicy replacementPolicy,
     WritePolicy writePolicy,
-    WriteMissPolicy writeMissPolicy
+    WriteMissPolicy writeMissPolicy,
+    PrefetchPolicy prefetchPolicy
 )
     : cacheSize_(cacheSize),
       blockSize_(blockSize),
       associativity_(associativity),
       numberOfLines_(
-        validateAndCalculateLineCount(
-            cacheSize,
-            blockSize,
-            associativity,
-            writePolicy,
-            writeMissPolicy
-        )
+          validateAndCalculateLineCount(
+              cacheSize,
+              blockSize,
+              associativity,
+              writePolicy,
+              writeMissPolicy
+          )
       ),
       numberOfSets_(numberOfLines_ / associativity_),
       replacementPolicy_(replacementPolicy),
       writePolicy_(writePolicy),
       writeMissPolicy_(writeMissPolicy),
-      sets_(), 
+      prefetchPolicy_(prefetchPolicy),
+      sets_(),
       missClassifier_(numberOfLines_) {
 
     sets_.reserve(numberOfSets_);
@@ -220,6 +222,13 @@ CacheAccessResult SetAssociativeCache::access(
         writePolicy_ == WritePolicy::WriteThrough
     ) {
         statistics_.recordMemoryWrite();
+    }
+
+    if (
+        prefetchPolicy_ ==
+            PrefetchPolicy::NextLine
+    ) {
+        prefetchNextBlock(blockAddress);
     }
 
     return {
@@ -475,4 +484,50 @@ bool SetAssociativeCache::hasBlock(
     }
 
     return false;
+}
+
+void SetAssociativeCache::prefetchNextBlock(
+    std::uint64_t blockAddress
+) {
+    const std::uint64_t nextBlock =
+        blockAddress + 1;
+
+    if (hasBlock(nextBlock)) {
+        return;
+    }
+
+    const std::size_t setIndex =
+        calculateSetIndex(nextBlock);
+
+    const std::uint64_t tag =
+        calculateTag(nextBlock);
+
+    CacheSet& set = sets_.at(setIndex);
+
+    CacheLine& insertionLine =
+        set.selectLineForInsertion(
+            replacementPolicy_
+        );
+
+    if (
+        insertionLine.valid &&
+        insertionLine.dirty &&
+        writePolicy_ == WritePolicy::WriteBack
+    ) {
+        statistics_.recordDirtyEviction();
+        statistics_.recordMemoryWrite();
+    }
+
+    ++accessCounter_;
+
+    insertionLine.valid = true;
+    insertionLine.dirty = false;
+    insertionLine.tag = tag;
+    insertionLine.blockAddress = nextBlock;
+    insertionLine.insertionOrder = accessCounter_;
+    insertionLine.lastAccessOrder = accessCounter_;
+
+    statistics_.recordMemoryRead();
+
+    statistics_.recordPrefetch();
 }
