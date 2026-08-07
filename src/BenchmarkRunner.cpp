@@ -14,19 +14,29 @@
 
 std::vector<BenchmarkResult> BenchmarkRunner::run(
     const std::vector<MemoryAccess>& accesses,
-    std::size_t cacheSize,
-    std::size_t blockSize,
     double cacheAccessTime,
     double memoryReadPenalty,
     double memoryWritePenalty
 ) {
-    const std::size_t totalLines =
-        cacheSize / blockSize;
 
     const std::vector<std::size_t> associativities = {
         1,
         2,
         4
+    };
+
+    const std::vector<std::size_t> cacheSizes = {
+        64,
+        128,
+        256,
+        512
+    };
+
+    const std::vector<std::size_t> blockSizes = {
+        8,
+        16,
+        32,
+        64
     };
 
     const std::vector<ReplacementPolicy>
@@ -48,50 +58,62 @@ std::vector<BenchmarkResult> BenchmarkRunner::run(
 
     std::vector<BenchmarkResult> results;
 
-    for (
-        const std::size_t associativity :
-        associativities
-    ) {
-        if (
-            associativity > totalLines ||
-            totalLines % associativity != 0
-        ) {
-            continue;
-        }
+    for (const std::size_t cacheSize : cacheSizes) {
+        for (const std::size_t blockSize : blockSizes) {
 
-        for (
-            const ReplacementPolicy replacementPolicy :
-            replacementPolicies
-        ) {
+            if (cacheSize % blockSize != 0) {
+                continue;
+            }
+
+            const std::size_t totalLines =
+                cacheSize / blockSize;
+
             for (
-                const WritePolicy writePolicy :
-                writePolicies
+                const std::size_t associativity :
+                associativities
             ) {
-                for (
-                    const WriteMissPolicy writeMissPolicy :
-                    writeMissPolicies
+                if (
+                    associativity > totalLines ||
+                    totalLines % associativity != 0
                 ) {
-                    if (
-                        writePolicy == WritePolicy::WriteBack &&
-                        writeMissPolicy ==
-                            WriteMissPolicy::NoWriteAllocate
+                    continue;
+                }
+
+                for (
+                    const ReplacementPolicy replacementPolicy :
+                    replacementPolicies
+                ) {
+                    for (
+                        const WritePolicy writePolicy :
+                        writePolicies
                     ) {
-                        continue;
+                        for (
+                            const WriteMissPolicy writeMissPolicy :
+                            writeMissPolicies
+                        ) {
+                            if (
+                                writePolicy == WritePolicy::WriteBack &&
+                                writeMissPolicy ==
+                                    WriteMissPolicy::NoWriteAllocate
+                            ) {
+                                continue;
+                            }
+                            results.push_back(
+                                runConfiguration(
+                                    accesses,
+                                    cacheSize,
+                                    blockSize,
+                                    associativity,
+                                    replacementPolicy,
+                                    writePolicy,
+                                    writeMissPolicy,
+                                    cacheAccessTime,
+                                    memoryReadPenalty,
+                                    memoryWritePenalty
+                                )
+                            );
+                        }
                     }
-                    results.push_back(
-                        runConfiguration(
-                            accesses,
-                            cacheSize,
-                            blockSize,
-                            associativity,
-                            replacementPolicy,
-                            writePolicy,
-                            writeMissPolicy,
-                            cacheAccessTime,
-                            memoryReadPenalty,
-                            memoryWritePenalty
-                        )
-                    );
                 }
             }
         }
@@ -158,27 +180,31 @@ BenchmarkResult BenchmarkRunner::runConfiguration(
         replacementPolicy,
         writePolicy,
         writeMissPolicy,
+
         statistics.getHits(),
         statistics.getMisses(),
-        statistics.getMemoryReads(),
-        statistics.getMemoryWrites(),
-        statistics.getDirtyEvictions(),
+
         statistics.getCompulsoryMisses(),
         statistics.getConflictMisses(),
         statistics.getCapacityMisses(),
         statistics.getBypassMisses(),
+
+        statistics.getMemoryReads(),
+        statistics.getMemoryWrites(),
+        statistics.getDirtyEvictions(),
+
         statistics.getHitRate(),
-        
+
         statistics.calculateAmat(
             cacheAccessTime,
             memoryReadPenalty
         ),
+
         statistics.calculateAverageAccessCost(
             cacheAccessTime,
             memoryReadPenalty,
             memoryWritePenalty
         )
-
     };
 }
 
@@ -202,6 +228,8 @@ void BenchmarkRunner::printResults(
     constexpr int conflictWidth = 8;
     constexpr int capacityWidth = 8;
     constexpr int bypassWidth = 8;
+    constexpr int cacheSizeWidth = 12;
+    constexpr int blockSizeWidth = 12;
 
     const int tableWidth =
         rankWidth +
@@ -220,7 +248,9 @@ void BenchmarkRunner::printResults(
         compulsoryWidth +
         conflictWidth +
         capacityWidth +
-        bypassWidth;
+        bypassWidth +
+        cacheSizeWidth +
+        blockSizeWidth;
 
     const std::string separator(
         static_cast<std::size_t>(tableWidth),
@@ -233,6 +263,8 @@ void BenchmarkRunner::printResults(
     std::cout
         << std::left
         << std::setw(rankWidth) << "Rank"
+        << std::setw(cacheSizeWidth) << "Cache Size"
+        << std::setw(blockSizeWidth) << "Block Size"
         << std::setw(associativityWidth) << "Assoc."
         << std::setw(replacementWidth) << "Repl."
         << std::setw(writePolicyWidth) << "Write Policy"
@@ -264,6 +296,12 @@ void BenchmarkRunner::printResults(
             << std::left
             << std::setw(rankWidth)
             << (index + 1)
+
+            << std::setw(cacheSizeWidth)
+            << result.cacheSize
+
+            << std::setw(blockSizeWidth)
+            << result.blockSize
 
             << std::setw(associativityWidth)
             << result.associativity
@@ -364,6 +402,14 @@ void BenchmarkRunner::printResults(
         std::cout << "Estimated AMAT: "
                   << best.amat
                   << " ns\n";
+
+        std::cout << "Cache size: "
+                  << best.cacheSize
+                  << " bytes\n";
+
+        std::cout << "Block size: "
+                  << best.blockSize
+                  << " bytes\n";
     }
 }
 

@@ -11,6 +11,7 @@
 #include "HierarchyAccessResult.hpp"
 #include "HierarchyStatistics.hpp"
 #include "HierarchyBenchmarkRunner.hpp"
+#include "WorkloadGenerator.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -65,6 +66,15 @@ struct ProgramOptions {
     double memoryLatency = 100.0;
 
     bool hierarchyBenchmark = false;
+
+    std::string generatedPattern;
+
+    std::size_t generatedAccessCount = 1000;
+    std::uint64_t generatedStartAddress = 0;
+    std::uint64_t generatedStride = 16;
+    std::size_t generatedWorkingSetSize = 64;
+
+    unsigned int randomSeed = 42;
 };
 
 void printUsage(const std::string& programName) {
@@ -111,6 +121,11 @@ void printUsage(const std::string& programName) {
         << "  --l2-latency <ns>      L2 access latency\n"
         << "  --memory-latency <ns>  Main-memory latency\n"
         << "  --hierarchy-benchmark  Benchmark L1/L2 configurations\n"
+        << "  --generate <pattern>   sequential, loop, stride, or random\n"
+        << "  --accesses <count>     Number of generated accesses\n"
+        << "  --stride <bytes>       Address spacing between generated accesses\n"
+        << "  --working-set <count>  Number of addresses in loop/random workload\n"
+        << "  --seed <value>         Random workload seed\n"
         << "Example:\n"
         << "  " << programName
         << " --cache-size 64"
@@ -306,8 +321,14 @@ ProgramOptions parseArguments(int argc, char* argv[]) {
             continue;
         }
 
+
         if (argument == "--hierarchy") {
             options.hierarchy = true;
+            continue;
+        }
+
+        if (argument == "--hierarchy-benchmark") {
+            options.hierarchyBenchmark = true;
             continue;
         }
 
@@ -322,11 +343,6 @@ ProgramOptions parseArguments(int argc, char* argv[]) {
                 argv[++index],
                 "--cache-size"
             );
-        }
-
-        if (argument == "--hierarchy-benchmark") {
-            options.hierarchyBenchmark = true;
-            continue;
 
         } else if (argument == "--block-size") {
             if (index + 1 >= argc) {
@@ -554,6 +570,70 @@ ProgramOptions parseArguments(int argc, char* argv[]) {
                     "--memory-latency"
                 );
 
+        } else if (argument == "--generate") {
+            if (index + 1 >= argc) {
+                throw std::invalid_argument(
+                    "Missing value after --generate."
+                );
+            }
+
+            options.generatedPattern =
+                argv[++index];
+
+        } else if (argument == "--accesses") {
+            if (index + 1 >= argc) {
+                throw std::invalid_argument(
+                    "Missing value after --accesses."
+                );
+            }
+
+            options.generatedAccessCount =
+                parseSize(
+                    argv[++index],
+                    "--accesses"
+                );
+
+        } else if (argument == "--stride") {
+            if (index + 1 >= argc) {
+                throw std::invalid_argument(
+                    "Missing value after --stride."
+                );
+            }
+
+            options.generatedStride =
+                parseSize(
+                    argv[++index],
+                    "--stride"
+                );
+
+        } else if (argument == "--working-set") {
+            if (index + 1 >= argc) {
+                throw std::invalid_argument(
+                    "Missing value after --working-set."
+                );
+            }
+
+            options.generatedWorkingSetSize =
+                parseSize(
+                    argv[++index],
+                    "--working-set"
+                );
+
+        } else if (argument == "--seed") {
+            if (index + 1 >= argc) {
+                throw std::invalid_argument(
+                    "Missing value after --seed."
+                );
+            }
+
+            options.randomSeed =
+                static_cast<unsigned int>(
+                    parseSize(
+                        argv[++index],
+                        "--seed"
+                    )
+                );
+
         } else {
             throw std::invalid_argument(
                 "Unknown option: " + argument
@@ -585,8 +665,24 @@ int main(int argc, char* argv[]) {
             options.writeMissPolicy
         );
           
-        const std::vector<MemoryAccess> accesses =
-            TraceParser::parseFile(options.tracePath);
+        std::vector<MemoryAccess> accesses;
+
+        if (!options.generatedPattern.empty()) {
+            accesses =
+                WorkloadGenerator::generate(
+                    options.generatedPattern,
+                    options.generatedAccessCount,
+                    options.generatedStartAddress,
+                    options.generatedStride,
+                    options.generatedWorkingSetSize,
+                    options.randomSeed
+                );
+        } else {
+            accesses =
+                TraceParser::parseFile(
+                    options.tracePath
+                );
+        }
 
         if (options.hierarchyBenchmark) {
             const std::vector<HierarchyBenchmarkResult> results =
@@ -714,13 +810,11 @@ int main(int argc, char* argv[]) {
         if (options.benchmark) {
             const std::vector<BenchmarkResult> results =
                 BenchmarkRunner::run(
-                    accesses,
-                    options.cacheSize,
-                    options.blockSize,
-                    options.cacheAccessTime,
-                    options.memoryReadPenalty,
-                    options.memoryWritePenalty
-                );
+                accesses,
+                options.cacheAccessTime,
+                options.memoryReadPenalty,
+                options.memoryWritePenalty
+            );
 
             BenchmarkRunner::printResults(results);
 

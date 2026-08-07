@@ -38,8 +38,6 @@ class BenchmarkRunner {
 public:
     static std::vector<BenchmarkResult> run(
         const std::vector<MemoryAccess>& accesses,
-        std::size_t cacheSize,
-        std::size_t blockSize,
         double cacheAccessTime,
         double memoryReadPenalty,
         double memoryWritePenalty

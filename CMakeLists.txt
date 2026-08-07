@@ -39,6 +39,7 @@ add_executable(
     src/CacheVisualizer.cpp
     src/BenchmarkRunner.cpp
     src/HierarchyBenchmarkRunner.cpp
+    src/WorkloadGenerator.cpp
 )
 
 target_link_libraries(
@@ -96,4 +97,38 @@ target_link_libraries(
 add_test(
     NAME hierarchy_tests
     COMMAND hierarchy_tests
+)
+
+add_executable (
+    workload_generator_tests
+    tests/workload_generator_tests.cpp
+    src/WorkloadGenerator.cpp
+)
+
+target_link_libraries(
+    workload_generator_tests
+    PRIVATE
+    cache_core
+)
+
+add_test(
+    NAME workload_generator_tests
+    COMMAND workload_generator_tests
+)
+
+add_executable(
+    benchmark_runner_tests
+    tests/benchmark_runner_tests.cpp
+    src/BenchmarkRunner.cpp
+)
+
+target_link_libraries(
+    benchmark_runner_tests
+    PRIVATE
+    cache_core
+)
+
+add_test(
+    NAME benchmark_runner_tests
+    COMMAND benchmark_runner_tests
 )
