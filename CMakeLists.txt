@@ -40,6 +40,7 @@ add_executable(
     src/BenchmarkRunner.cpp
     src/HierarchyBenchmarkRunner.cpp
     src/WorkloadGenerator.cpp
+    src/ArchitectureComparisonRunner.cpp
 )
 
 target_link_libraries(
@@ -149,4 +150,21 @@ target_link_libraries(
 add_test(
     NAME integration_tests
     COMMAND integration_tests
+)
+
+add_executable(
+    architecture_comparison_tests
+    tests/architecture_comparison_tests.cpp
+    src/ArchitectureComparisonRunner.cpp
+)
+
+target_link_libraries(
+    architecture_comparison_tests
+    PRIVATE
+    cache_core
+)
+
+add_test(
+    NAME architecture_comparison_tests
+    COMMAND architecture_comparison_tests
 )

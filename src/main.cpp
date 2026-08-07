@@ -12,6 +12,7 @@
 #include "HierarchyStatistics.hpp"
 #include "HierarchyBenchmarkRunner.hpp"
 #include "WorkloadGenerator.hpp"
+#include "ArchitectureComparisonRunner.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -75,6 +76,8 @@ struct ProgramOptions {
     std::size_t generatedWorkingSetSize = 64;
 
     unsigned int randomSeed = 42;
+
+    bool compareArchitectures = false;
 };
 
 void printUsage(const std::string& programName) {
@@ -126,6 +129,7 @@ void printUsage(const std::string& programName) {
         << "  --stride <bytes>       Address spacing between generated accesses\n"
         << "  --working-set <count>  Number of addresses in loop/random workload\n"
         << "  --seed <value>         Random workload seed\n"
+        << "  --compare-architectures Compare single-cache and L1/L2 performance\n"
         << "Example:\n"
         << "  " << programName
         << " --cache-size 64"
@@ -329,6 +333,11 @@ ProgramOptions parseArguments(int argc, char* argv[]) {
 
         if (argument == "--hierarchy-benchmark") {
             options.hierarchyBenchmark = true;
+            continue;
+        }
+
+        if (argument == "--compare-architectures") {
+            options.compareArchitectures = true;
             continue;
         }
 
@@ -682,6 +691,51 @@ int main(int argc, char* argv[]) {
                 TraceParser::parseFile(
                     options.tracePath
                 );
+        }
+
+        if (options.compareArchitectures) {
+            if (options.l1BlockSize != options.l2BlockSize) {
+                throw std::invalid_argument(
+                    "L1 and L2 block sizes must match."
+                );
+            }
+
+            if (options.blockSize != options.l1BlockSize) {
+                throw std::invalid_argument(
+                    "Single-cache and hierarchy block sizes "
+                    "must match for comparison."
+                );
+            }
+
+            const ArchitectureComparisonResult result =
+                ArchitectureComparisonRunner::run(
+                    accesses,
+
+                    options.cacheSize,
+                    options.blockSize,
+                    options.associativity,
+
+                    options.l1Size,
+                    options.l1Associativity,
+
+                    options.l2Size,
+                    options.l2Associativity,
+
+                    options.cacheAccessTime,
+                    options.l1Latency,
+                    options.l2Latency,
+                    options.memoryLatency,
+
+                    options.replacementPolicy,
+                    options.writePolicy,
+                    options.writeMissPolicy
+                );
+
+            ArchitectureComparisonRunner::printResult(
+                result
+            );
+
+            return 0;
         }
 
         if (options.hierarchyBenchmark) {
