@@ -21,13 +21,15 @@ struct BenchmarkResult {
 
     std::size_t hits;
     std::size_t misses;
-    std::size_t memoryReads;
-    std::size_t memoryWrites;
-    std::size_t dirtyEvictions;
+
     std::size_t compulsoryMisses;
     std::size_t conflictMisses;
     std::size_t capacityMisses;
     std::size_t bypassMisses;
+
+    std::size_t memoryReads;
+    std::size_t memoryWrites;
+    std::size_t dirtyEvictions;
 
     double hitRate;
     double amat;
