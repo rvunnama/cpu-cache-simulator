@@ -132,3 +132,21 @@ add_test(
     NAME benchmark_runner_tests
     COMMAND benchmark_runner_tests
 )
+
+add_executable(
+    integration_tests
+    tests/integration_tests.cpp
+    src/BenchmarkRunner.cpp
+    src/WorkloadGenerator.cpp
+)
+
+target_link_libraries(
+    integration_tests
+    PRIVATE
+    cache_core
+)
+
+add_test(
+    NAME integration_tests
+    COMMAND integration_tests
+)
