@@ -52,3 +52,21 @@ main.cpp
    +-- CacheVisualizer
    |
    +-- BenchmarkRunner
+
+## Included Workloads
+
+The repository contains targeted traces for testing specific cache behaviors:
+
+| Trace | Purpose |
+|---|---|
+| `basic.trace` | Basic hit/miss behavior |
+| `conflict.trace` | Conflict misses |
+| `capacity.trace` | Capacity pressure |
+| `replacement.trace` | FIFO vs. LRU |
+| `locality.trace` | Temporal locality |
+| `stride.trace` | Strided access behavior |
+| `writeback.trace` | Dirty evictions |
+| `mixed.trace` | Mixed read/write behavior |
+| `stream.trace` | Streaming workload |
+
+Synthetic workloads can also be generated with `--generate sequential`, `loop`, `stride`, or `random`.
