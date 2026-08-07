@@ -175,6 +175,8 @@ Synthetic workloads can also be generated with `--generate sequential`, `loop`, 
 
 ## Example Output
 
+```bash
+
 Benchmark Results
 ------------------------------------------------------------
 
@@ -183,6 +185,8 @@ Rank Cache Assoc Repl Hit Rate AMAT
 1    256   4-way LRU   97.3%    1.42 ns
 2    128   4-way LRU   95.1%    2.17 ns
 3     64   2-way FIFO  91.6%    4.91 ns
+
+```
 
 ## Demo
 
