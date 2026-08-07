@@ -38,6 +38,7 @@ add_executable(
     src/TraceParser.cpp
     src/CacheVisualizer.cpp
     src/BenchmarkRunner.cpp
+    src/HierarchyBenchmarkRunner.cpp
 )
 
 target_link_libraries(

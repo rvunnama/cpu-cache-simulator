@@ -10,6 +10,7 @@
 #include "CacheHierarchy.hpp"
 #include "HierarchyAccessResult.hpp"
 #include "HierarchyStatistics.hpp"
+#include "HierarchyBenchmarkRunner.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -62,6 +63,8 @@ struct ProgramOptions {
     double l1Latency = 1.0;
     double l2Latency = 10.0;
     double memoryLatency = 100.0;
+
+    bool hierarchyBenchmark = false;
 };
 
 void printUsage(const std::string& programName) {
@@ -107,6 +110,7 @@ void printUsage(const std::string& programName) {
         << "  --l1-latency <ns>      L1 access latency\n"
         << "  --l2-latency <ns>      L2 access latency\n"
         << "  --memory-latency <ns>  Main-memory latency\n"
+        << "  --hierarchy-benchmark  Benchmark L1/L2 configurations\n"
         << "Example:\n"
         << "  " << programName
         << " --cache-size 64"
@@ -318,6 +322,11 @@ ProgramOptions parseArguments(int argc, char* argv[]) {
                 argv[++index],
                 "--cache-size"
             );
+        }
+
+        if (argument == "--hierarchy-benchmark") {
+            options.hierarchyBenchmark = true;
+            continue;
 
         } else if (argument == "--block-size") {
             if (index + 1 >= argc) {
@@ -579,6 +588,24 @@ int main(int argc, char* argv[]) {
         const std::vector<MemoryAccess> accesses =
             TraceParser::parseFile(options.tracePath);
 
+        if (options.hierarchyBenchmark) {
+            const std::vector<HierarchyBenchmarkResult> results =
+                HierarchyBenchmarkRunner::run(
+                    accesses,
+                    options.l1BlockSize,
+                    options.l1Latency,
+                    options.l2Latency,
+                    options.memoryLatency,
+                    options.replacementPolicy,
+                    options.writePolicy,
+                    options.writeMissPolicy
+                );
+
+            HierarchyBenchmarkRunner::printResults(results);
+
+            return 0;
+        }
+        
         if (options.hierarchy) {
             if (options.l1BlockSize != options.l2BlockSize) {
                 throw std::invalid_argument(
