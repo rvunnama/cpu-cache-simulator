@@ -635,24 +635,9 @@ int main(int argc, char* argv[]) {
                     << options.memoryLatency
                     << " ns\n\n";
 
-            double totalLatency = 0.0;
-
             for (const MemoryAccess& access : accesses) {
                 const HierarchyAccessResult result =
                     hierarchy.access(access);
-
-                if (result.l1Hit) {
-                    totalLatency += options.l1Latency;
-                } else if (result.l2Hit) {
-                    totalLatency +=
-                        options.l1Latency +
-                        options.l2Latency;
-                } else {
-                    totalLatency +=
-                        options.l1Latency +
-                        options.l2Latency +
-                        options.memoryLatency;
-                }
 
                 if (options.verbose) {
                     std::cout
@@ -681,22 +666,22 @@ int main(int argc, char* argv[]) {
 
             hierarchy.printStatistics();
 
+            const HierarchyStatistics& statistics =
+                hierarchy.getStatistics();
+
             const double averageHierarchyLatency =
-                accesses.empty()
-                    ? 0.0
-                    : totalLatency /
-                        static_cast<double>(
-                            accesses.size()
-                        );
+                statistics.calculateAverageAccessTime(
+                    options.l1Latency,
+                    options.l2Latency,
+                    options.memoryLatency
+                );
 
             std::cout << std::fixed
                     << std::setprecision(2);
 
-            std::cout << "Average hierarchy latency: "
+            std::cout << "Average hierarchy access time: "
                     << averageHierarchyLatency
                     << " ns\n";
-
-            return 0;
         }
 
         if (options.benchmark) {

@@ -6,6 +6,7 @@
 #include <cassert>
 #include <iostream>
 #include <utility>
+#include <cmath>
 
 void testDirtyL1EvictionWritesBackToL2() {
     SetAssociativeCache l1(
@@ -122,6 +123,105 @@ void testL2EvictionInvalidatesL1() {
         << "PASS: L2 eviction invalidates L1 copy\n";
 }
 
+void testHierarchyPerformanceMetrics() {
+    SetAssociativeCache l1(
+        16,
+        16,
+        1,
+        ReplacementPolicy::LRU,
+        WritePolicy::WriteThrough,
+        WriteMissPolicy::WriteAllocate
+    );
+
+    SetAssociativeCache l2(
+        64,
+        16,
+        2,
+        ReplacementPolicy::LRU,
+        WritePolicy::WriteThrough,
+        WriteMissPolicy::WriteAllocate
+    );
+
+    CacheHierarchy hierarchy(
+        std::move(l1),
+        std::move(l2)
+    );
+
+    hierarchy.access({
+        AccessType::Read,
+        0x0000
+    });
+
+    hierarchy.access({
+        AccessType::Read,
+        0x0000
+    });
+
+    hierarchy.access({
+        AccessType::Read,
+        0x0010
+    });
+
+    hierarchy.access({
+        AccessType::Read,
+        0x0000
+    });
+
+    const HierarchyStatistics& statistics =
+        hierarchy.getStatistics();
+
+    assert(statistics.getL1Hits() == 1);
+    assert(statistics.getL1Misses() == 3);
+
+    assert(statistics.getL2Hits() == 1);
+    assert(statistics.getL2Misses() == 2);
+
+    assert(
+        std::abs(
+            statistics.getL1HitRate() - 25.0
+        ) < 0.0001
+    );
+
+    assert(
+        std::abs(
+            statistics.getL2LocalHitRate() -
+            33.333333
+        ) < 0.001
+    );
+
+    assert(
+        std::abs(
+            statistics.getGlobalHitRate() -
+            50.0
+        ) < 0.0001
+    );
+
+    const double averageTime =
+        statistics.calculateAverageAccessTime(
+            1.0,
+            10.0,
+            100.0
+        );
+
+    // Access costs:
+    // memory = 111
+    // L1 hit = 1
+    // memory = 111
+    // L2 hit = 11
+    //
+    // Total = 234
+    // Average = 58.5 ns
+
+    assert(
+        std::abs(
+            averageTime - 58.5
+        ) < 0.0001
+    );
+
+    std::cout
+        << "PASS: hierarchy performance metrics\n";
+}
+
 int main() {
     SetAssociativeCache l1(
         16,
@@ -191,6 +291,8 @@ int main() {
     testDirtyL1EvictionWritesBackToL2();
 
     testL2EvictionInvalidatesL1();
+
+    testHierarchyPerformanceMetrics();
 
     std::cout
         << "All cache hierarchy tests passed.\n";

@@ -35,6 +35,16 @@ public:
     std::size_t getL1Invalidations() const;
     std::size_t getDirtyL1Invalidations() const;
 
+    double getL1HitRate() const;
+    double getL2LocalHitRate() const;
+    double getGlobalHitRate() const;
+
+    double calculateAverageAccessTime(
+        double l1Latency,
+        double l2Latency,
+        double memoryLatency
+    ) const;
+
 private:
     std::size_t l1Hits_ = 0;
     std::size_t l1Misses_ = 0;
