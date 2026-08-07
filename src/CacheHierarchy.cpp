@@ -28,7 +28,10 @@ HierarchyAccessResult CacheHierarchy::access(
     if (l2_.contains(access.address)) {
         statistics_.recordL2Hit();
 
-        l1_.insert(access);
+        const CacheAccessResult l1Result =
+            l1_.insert(access);
+
+        handleL1InsertionResult(l1Result);
 
         return {
             false,
@@ -40,8 +43,15 @@ HierarchyAccessResult CacheHierarchy::access(
     statistics_.recordL2Miss();
     statistics_.recordMemoryAccess();
 
-    l2_.insert(access);
-    l1_.insert(access);
+    const CacheAccessResult l2Result =
+        l2_.insert(access);
+
+    handleL2InsertionResult(l2Result);
+
+    const CacheAccessResult l1Result =
+        l1_.insert(access);
+
+    handleL1InsertionResult(l1Result);
 
     return {
         false,
@@ -67,4 +77,42 @@ CacheHierarchy::getStatistics() const {
 
 void CacheHierarchy::printStatistics() const {
     statistics_.printReport();
+}
+
+void CacheHierarchy::handleL1InsertionResult(
+    const CacheAccessResult& result
+) {
+    if (!result.evictionOccurred) {
+        return;
+    }
+
+    statistics_.recordL1Eviction();
+
+    if (!result.dirtyEviction) {
+        return;
+    }
+
+    statistics_.recordL1DirtyWriteBack();
+
+    const CacheAccessResult l2Result =
+        l2_.writeBackBlock(
+            result.evictedBlockAddress
+        );
+
+    handleL2InsertionResult(l2Result);
+}
+
+void CacheHierarchy::handleL2InsertionResult(
+    const CacheAccessResult& result
+) {
+    if (!result.evictionOccurred) {
+        return;
+    }
+
+    statistics_.recordL2Eviction();
+
+    if (result.dirtyEviction) {
+        statistics_.recordL2DirtyWriteBack();
+        statistics_.recordMemoryAccess();
+    }
 }

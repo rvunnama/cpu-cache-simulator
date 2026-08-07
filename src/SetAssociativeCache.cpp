@@ -263,6 +263,10 @@ SetAssociativeCache::getSets() const {
     return sets_;
 }
 
+std::size_t SetAssociativeCache::getBlockSize() const {
+    return blockSize_;
+}
+
 const CacheStatistics&
 SetAssociativeCache::getStatistics() const {
     return statistics_;
@@ -332,6 +336,69 @@ CacheAccessResult SetAssociativeCache::insert(
     insertionLine.dirty =
         access.type == AccessType::Write &&
         writePolicy_ == WritePolicy::WriteBack;
+    insertionLine.tag = tag;
+    insertionLine.blockAddress = blockAddress;
+    insertionLine.insertionOrder = accessCounter_;
+    insertionLine.lastAccessOrder = accessCounter_;
+
+    return {
+        false,
+        false,
+        evictionOccurred,
+        dirtyEviction,
+        evictedBlockAddress
+    };
+}
+
+CacheAccessResult SetAssociativeCache::writeBackBlock(
+    std::uint64_t blockAddress
+) {
+    ++accessCounter_;
+
+    const std::size_t setIndex =
+        calculateSetIndex(blockAddress);
+
+    const std::uint64_t tag =
+        calculateTag(blockAddress);
+
+    CacheSet& set = sets_.at(setIndex);
+    std::vector<CacheLine>& lines = set.getLines();
+
+    // The block already exists in this cache.
+    for (CacheLine& line : lines) {
+        if (line.valid && line.tag == tag) {
+            line.dirty = true;
+            line.lastAccessOrder = accessCounter_;
+
+            return {
+                true,   // hit
+                false,  // bypassed
+                false,  // eviction occurred
+                false,  // dirty eviction
+                0
+            };
+        }
+    }
+
+    CacheLine& insertionLine =
+        set.selectLineForInsertion(
+            replacementPolicy_
+        );
+
+    const bool evictionOccurred =
+        insertionLine.valid;
+
+    const bool dirtyEviction =
+        insertionLine.valid &&
+        insertionLine.dirty;
+
+    const std::uint64_t evictedBlockAddress =
+        evictionOccurred
+            ? insertionLine.blockAddress
+            : 0;
+
+    insertionLine.valid = true;
+    insertionLine.dirty = true;
     insertionLine.tag = tag;
     insertionLine.blockAddress = blockAddress;
     insertionLine.insertionOrder = accessCounter_;

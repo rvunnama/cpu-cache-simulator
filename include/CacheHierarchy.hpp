@@ -29,6 +29,14 @@ private:
     SetAssociativeCache l1_;
     SetAssociativeCache l2_;
 
+    void handleL1InsertionResult(
+        const CacheAccessResult& result
+    );
+
+    void handleL2InsertionResult(
+        const CacheAccessResult& result
+    );
+
     HierarchyStatistics statistics_;
 };
 

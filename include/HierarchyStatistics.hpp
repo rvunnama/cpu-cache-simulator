@@ -19,12 +19,26 @@ public:
 
     void printReport() const;
 
+    void recordL1Eviction();
+    void recordL1DirtyWriteBack();
+    void recordL2Eviction();
+    void recordL2DirtyWriteBack();
+
+    std::size_t getL1Evictions() const;
+    std::size_t getL1DirtyWriteBacks() const;
+    std::size_t getL2Evictions() const;
+    std::size_t getL2DirtyWriteBacks() const;
+
 private:
     std::size_t l1Hits_ = 0;
     std::size_t l1Misses_ = 0;
     std::size_t l2Hits_ = 0;
     std::size_t l2Misses_ = 0;
     std::size_t memoryAccesses_ = 0;
+    std::size_t l1Evictions_ = 0;
+    std::size_t l1DirtyWriteBacks_ = 0;
+    std::size_t l2Evictions_ = 0;
+    std::size_t l2DirtyWriteBacks_ = 0;
 };
 
 #endif

@@ -37,6 +37,12 @@ public:
         const MemoryAccess& access
     );
 
+    CacheAccessResult writeBackBlock(
+        std::uint64_t blockAddress
+    );
+
+    std::size_t getBlockSize() const;
+
     void printStatistics() const;
 
     const std::vector<CacheSet>& getSets() const;

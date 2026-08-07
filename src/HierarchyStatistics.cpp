@@ -43,6 +43,40 @@ HierarchyStatistics::getMemoryAccesses() const {
     return memoryAccesses_;
 }
 
+void HierarchyStatistics::recordL1Eviction() {
+    ++l1Evictions_;
+}
+
+void HierarchyStatistics::recordL1DirtyWriteBack() {
+    ++l1DirtyWriteBacks_;
+}
+
+void HierarchyStatistics::recordL2Eviction() {
+    ++l2Evictions_;
+}
+
+void HierarchyStatistics::recordL2DirtyWriteBack() {
+    ++l2DirtyWriteBacks_;
+}
+
+std::size_t HierarchyStatistics::getL1Evictions() const {
+    return l1Evictions_;
+}
+
+std::size_t
+HierarchyStatistics::getL1DirtyWriteBacks() const {
+    return l1DirtyWriteBacks_;
+}
+
+std::size_t HierarchyStatistics::getL2Evictions() const {
+    return l2Evictions_;
+}
+
+std::size_t
+HierarchyStatistics::getL2DirtyWriteBacks() const {
+    return l2DirtyWriteBacks_;
+}
+
 void HierarchyStatistics::printReport() const {
     std::cout << "\nCache Hierarchy Statistics\n";
     std::cout << "--------------------------\n";
@@ -60,5 +94,20 @@ void HierarchyStatistics::printReport() const {
               << '\n';
     std::cout << "Main-memory accesses: "
               << memoryAccesses_
+              << '\n';
+    std::cout << "L1 evictions: "
+              << l1Evictions_
+              << '\n';
+
+    std::cout << "L1 dirty write-backs to L2: "
+              << l1DirtyWriteBacks_
+              << '\n';
+
+    std::cout << "L2 evictions: "
+              << l2Evictions_
+              << '\n';
+
+    std::cout << "L2 dirty write-backs to memory: "
+              << l2DirtyWriteBacks_
               << '\n';
 }
