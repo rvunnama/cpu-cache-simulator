@@ -30,6 +30,19 @@ The simulator models direct-mapped and set-associative caches, multiple replacem
 - Standard Template Library
 - Git and GitHub
 
+## Project Structure
+
+cpu-cache-simulator/
+├── include/
+├── src/
+├── tests/
+├── traces/
+├── scripts/
+├── results/
+├── README.md
+├── CMakeLists.txt
+└── LICENSE
+
 ## Architecture
 
 ```text
@@ -56,39 +69,59 @@ main.cpp
 
 ## Example Commands
 
-./build/cache_simulator \
-  --cache-size 64 \
-  --block-size 16 \
-  --associativity 2 \
-  --replacement lru \
-  --write-policy write-back \
-  --write-miss-policy write-allocate \
-  --trace traces/mixed.trace \
-  --visualize
+### Cache Visualization
 
-./build/cache_simulator \
+```bash
+./cache_simulator \
+  --visualize \
+  --trace ../traces/basic.trace
+```
+
+### Benchmark Mode
+
+```bash
+./cache_simulator \
+  --benchmark \
   --generate random \
-  --accesses 10000 \
-  --working-set 256 \
-  --stride 16 \
-  --benchmark
+  --accesses 10000
+```
 
-./build/cache_simulator \
+### Hierarchy Simulation
+
+```bash
+./cache_simulator \
   --hierarchy \
-  --l1-size 32 \
-  --l1-block-size 16 \
-  --l1-associativity 1 \
-  --l2-size 128 \
-  --l2-block-size 16 \
-  --l2-associativity 2 \
-  --trace traces/mixed.trace
+  --trace ../traces/mixed.trace
+```
 
-./build/cache_simulator \
+### Architecture Comparison
+
+```bash
+./cache_simulator \
+  --compare-architectures \
   --generate loop \
-  --accesses 10000 \
-  --working-set 32 \
-  --stride 16 \
-  --compare-architectures
+  --accesses 10000
+```
+
+### Synthetic Workload
+
+```bash
+./cache_simulator \
+  --generate sequential \
+  --accesses 1000 \
+  --stride 16
+```
+
+## Example Output
+
+Benchmark Results
+------------------------------------------------------------
+
+Rank Cache Assoc Repl Hit Rate AMAT
+
+1    256   4-way LRU   97.3%    1.42 ns
+2    128   4-way LRU   95.1%    2.17 ns
+3     64   2-way FIFO  91.6%    4.91 ns
 
 ## Demo
 
@@ -107,6 +140,49 @@ Simulates a two-level cache hierarchy, reporting L1 hits, L2 hits, memory access
 ![--compare-architecture](screenshots/--compare-architecture-demo.png)
 
 Compares a single-cache design against a two-level L1/L2 hierarchy with the same workload and latency model by reporting hit rates, average access time, and the performance improvement of the better architecture.
+
+## Quick Start
+
+### Prerequisites
+
+- C++17 compatible compiler (GCC, Clang, or MSVC)
+- CMake 3.16 or newer
+
+### Clone the Repository
+
+```bash
+git clone https://github.com/rvunnama/cpu-cache-simulator.git
+cd cpu-cache-simulator
+```
+
+### Build
+
+```bash
+mkdir build
+cd build
+cmake ..
+cmake --build .
+```
+
+### Run
+
+```bash
+./cache_simulator \
+  --cache-size 64 \
+  --block-size 16 \
+  --associativity 2 \
+  --replacement lru \
+  --write-policy write-through \
+  --write-miss-policy write-allocate \
+  --trace ../traces/basic.trace \
+  --verbose
+```
+
+### View All Available Options
+
+```bash
+./cache_simulator --help
+```
 
 ## Included Workloads
 
